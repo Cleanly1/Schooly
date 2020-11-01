@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Text, View, ScrollView } from "react-native";
+import { Text, View, ScrollView, TextInput } from "react-native";
 import styles from "./styles";
 import Button from "../../components/Button/Button";
 import { firebase } from "../../src/firebase/config";
@@ -8,6 +8,8 @@ export default function HomeScreen({ navigation, route }) {
 	const [user, setUser] = useState("");
 	const [id, setId] = useState("");
 	const [lessons, setLessons] = useState([]);
+	const [title, setTitle] = useState("");
+	const [haveLoaded, setHaveLoaded] = useState(false);
 
 	useEffect(() => {
 		const uid = firebase.auth().currentUser.uid;
@@ -26,11 +28,14 @@ export default function HomeScreen({ navigation, route }) {
 				setId(user.id);
 			});
 
-		const ref = firebase.database().ref("/lessons");
+		if (!haveLoaded) {
+			const ref = firebase.database().ref("/lessons");
 
-		ref.on("value", function (snapshot) {
-			setLessons([...lessons, snapshot.val()]);
-		});
+			ref.on("value", function (snapshot) {
+				setLessons([...lessons, snapshot.val()]);
+			});
+			setHaveLoaded(true);
+		}
 	}, []);
 
 	const signOut = () => {
@@ -39,7 +44,6 @@ export default function HomeScreen({ navigation, route }) {
 			.signOut()
 			.then(() => {
 				setUser("");
-				navigation.navigate("Login");
 			})
 			.catch((error) => {});
 	};
@@ -49,14 +53,16 @@ export default function HomeScreen({ navigation, route }) {
 	};
 
 	const createLesson = () => {
+		if (title === "" || title.length <= 3) {
+			alert(
+				"Lesson must have a title that is more than 3 characters long"
+			);
+			return;
+		}
 		const randomID = getRandomNumber();
-		// lessons.forEach((lesson) => {
-		// 	console.log(lesson);
-		// });
-
 		const lessonId = randomID;
 		const lessonData = {
-			title: "Test Lesson",
+			title: title,
 			owner: id,
 			members: [id],
 		};
@@ -70,6 +76,7 @@ export default function HomeScreen({ navigation, route }) {
 			.set(lessonData);
 
 		setLessons([...lessons, { lessonId: lessonData }]);
+		setTitle("");
 	};
 
 	return (
@@ -82,16 +89,30 @@ export default function HomeScreen({ navigation, route }) {
 					paddingBottom: 10,
 				}}
 			>
-				<View style={styles.header}>
+				{/* <View style={styles.header}>
 					<Text style={styles.headerText}>
 						Welcome {user.fullName}
 					</Text>
+				</View> */}
+				<View
+					style={{ width: "100%", alignItems: "center", margin: 5 }}
+				>
+					<TextInput
+						style={styles.input}
+						placeholder="Lesson Title"
+						placeholderTextColor="#aaaaaa"
+						onChangeText={(text) => setTitle(text)}
+						value={title}
+						underlineColorAndroid="transparent"
+						autoCapitalize="none"
+					/>
+					<Button
+						style={{ width: "100%", marginTop: 5 }}
+						text="Add a lesson"
+						onPress={() => createLesson()}
+					/>
 				</View>
-				<Button
-					style={{ width: "100%", marginTop: 5 }}
-					text="Add a lesson"
-					onPress={() => createLesson()}
-				/>
+
 				<View>
 					{lessons &&
 						lessons.map((lesson, i) => {

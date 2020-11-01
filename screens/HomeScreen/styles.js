@@ -28,12 +28,12 @@ export default StyleSheet.create({
 	},
 	input: {
 		height: 48,
+		width: "60%",
 		borderRadius: 5,
 		overflow: "hidden",
 		backgroundColor: "white",
 		paddingLeft: 16,
-		flex: 1,
-		marginRight: 5,
+		margin: 5,
 	},
 	button: {
 		height: 47,
