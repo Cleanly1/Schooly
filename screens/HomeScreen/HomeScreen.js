@@ -10,6 +10,8 @@ export default function HomeScreen({ navigation, route }) {
 	const [lessons, setLessons] = useState([]);
 	const [title, setTitle] = useState("");
 	const [haveLoaded, setHaveLoaded] = useState(false);
+	const [show, setShow] = useState(false);
+	const [lessonID, setLessonID] = useState("");
 
 	useEffect(() => {
 		const uid = firebase.auth().currentUser.uid;
@@ -29,11 +31,14 @@ export default function HomeScreen({ navigation, route }) {
 			});
 
 		if (!haveLoaded) {
-			const ref = firebase.database().ref("/lessons");
+			// Get all of the users lessons
+			const ref = firebase.database().ref("user-lessons/" + `${uid}`);
 
-			ref.on("value", function (snapshot) {
-				setLessons([...lessons, snapshot.val()]);
+			ref.on("value", (snapshot) => {
+				console.log(snapshot.val());
+				setLessons(snapshot.val());
 			});
+
 			setHaveLoaded(true);
 		}
 	}, []);
@@ -48,8 +53,31 @@ export default function HomeScreen({ navigation, route }) {
 			.catch((error) => {});
 	};
 
-	const getRandomNumber = () => {
-		return 1234;
+	const getRandomID = () => {
+		let number = Math.floor(Math.random() * 100000 + 1);
+
+		let lessons = [];
+		const ref = firebase.database().ref("lessons/");
+
+		ref.on("value", (snapshot) => {
+			lessons = snapshot.val();
+		});
+		while (Object.keys(lessons).indexOf(number) != -1) {
+			console.log("hello");
+			number = Math.floor(Math.random() * 10000 + 1);
+		}
+		number = number.toString();
+		while (number.length < 5) number = "0" + number;
+
+		return number;
+	};
+
+	const showOptions = () => {
+		if (!show) {
+			const randomID = getRandomID();
+			setLessonID(randomID);
+		}
+		setShow(!show);
 	};
 
 	const createLesson = () => {
@@ -59,24 +87,27 @@ export default function HomeScreen({ navigation, route }) {
 			);
 			return;
 		}
-		const randomID = getRandomNumber();
-		const lessonId = randomID;
 		const lessonData = {
 			title: title,
 			owner: id,
 			members: [id],
+			requesting: [],
 		};
 		firebase
 			.database()
-			.ref("lessons/" + lessonId)
+			.ref("lessons/" + lessonID)
 			.set(lessonData);
 		firebase
 			.database()
-			.ref("user-lessons/" + `${user.id}/` + lessonId)
+			.ref("user-lessons/" + `${user.id}/` + lessonID)
 			.set(lessonData);
 
-		setLessons([...lessons, { lessonId: lessonData }]);
+		let update = {};
+		update[lessonID] = lessonData;
+
+		setLessons([...lessons, update]);
 		setTitle("");
+		setLessonID("");
 	};
 
 	return (
@@ -89,42 +120,50 @@ export default function HomeScreen({ navigation, route }) {
 					paddingBottom: 10,
 				}}
 			>
-				{/* <View style={styles.header}>
+				<View style={styles.header}>
 					<Text style={styles.headerText}>
 						Welcome {user.fullName}
 					</Text>
-				</View> */}
-				<View
-					style={{ width: "100%", alignItems: "center", margin: 5 }}
-				>
-					<TextInput
-						style={styles.input}
-						placeholder="Lesson Title"
-						placeholderTextColor="#aaaaaa"
-						onChangeText={(text) => setTitle(text)}
-						value={title}
-						underlineColorAndroid="transparent"
-						autoCapitalize="none"
-					/>
 					<Button
-						style={{ width: "100%", marginTop: 5 }}
-						text="Add a lesson"
-						onPress={() => createLesson()}
-					/>
+						style={{ width: 100, alignSelf: "flex-end" }}
+						text="Options"
+						onPress={() => {
+							showOptions();
+						}}
+					></Button>
 				</View>
+				{show ? (
+					<View style={styles.optionsContainer}>
+						<Text style={{ fontSize: 20 }}>
+							Lesson ID: {lessonID}
+						</Text>
+						<TextInput
+							style={styles.input}
+							placeholder="Lesson Title"
+							placeholderTextColor="#aaaaaa"
+							onChangeText={(text) => setTitle(text)}
+							value={title}
+							underlineColorAndroid="transparent"
+							autoCapitalize="none"
+						/>
+						<Button
+							style={{ width: "100%", marginTop: 5 }}
+							text="Add a lesson"
+							onPress={() => createLesson()}
+						/>
+					</View>
+				) : null}
 
 				<View>
+					<Text style={{}}>Your lessons:</Text>
 					{lessons &&
-						lessons.map((lesson, i) => {
-							return Object.keys(lesson).map((key, index) => {
-								const less = lesson[key];
-								console.log(less.title);
-								return (
-									<View key={index}>
-										<Text>{less.title}</Text>
-									</View>
-								);
-							});
+						Object.keys(lessons).map((key, index) => {
+							const less = lessons[key];
+							return (
+								<View key={index}>
+									<Text>{less.title}</Text>
+								</View>
+							);
 						})}
 				</View>
 				<Button

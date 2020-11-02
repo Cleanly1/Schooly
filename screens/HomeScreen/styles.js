@@ -6,12 +6,29 @@ export default StyleSheet.create({
 		alignItems: "center",
 	},
 	header: {
+		flexDirection: "row",
 		width: "100%",
 		alignItems: "center",
-		padding: 15,
+		justifyContent: "center",
+		padding: 20,
 	},
 	headerText: {
-		fontSize: 16,
+		fontSize: 20,
+		fontWeight: "bold",
+		marginRight: 50,
+	},
+
+	optionsContainer: {
+		position: "absolute",
+		width: "80%",
+		alignItems: "center",
+		backgroundColor: "grey",
+		zIndex: 1,
+		top: 60,
+		margin: 5,
+		padding: 10,
+		borderRadius: 5,
+		shadowColor: "black",
 	},
 	formContainer: {
 		flexDirection: "row",
@@ -34,31 +51,5 @@ export default StyleSheet.create({
 		backgroundColor: "white",
 		paddingLeft: 16,
 		margin: 5,
-	},
-	button: {
-		height: 47,
-		borderRadius: 5,
-		backgroundColor: "#788eec",
-		width: 80,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	buttonText: {
-		color: "white",
-		fontSize: 16,
-	},
-	listContainer: {
-		marginTop: 20,
-		padding: 20,
-	},
-	entityContainer: {
-		marginTop: 16,
-		borderBottomColor: "#cccccc",
-		borderBottomWidth: 1,
-		paddingBottom: 16,
-	},
-	entityText: {
-		fontSize: 20,
-		color: "#333333",
 	},
 });

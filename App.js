@@ -55,8 +55,9 @@ export default function App({ navigation }) {
 					<Stack.Screen
 						name="Home"
 						options={{
-							headerTitleAlign: "center",
-							title: "Welcome " + user.fullName,
+							headerShown: false,
+							// headerTitleAlign: "center",
+							// title: "Welcome " + user.fullName,
 						}}
 					>
 						{(props) => <HomeScreen {...props} extraData={user} />}
