@@ -3,14 +3,20 @@ import React, { useEffect, useState } from "react";
 import { View, Text, LogBox } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { LoginScreen, HomeScreen, RegistrationScreen } from "./screens";
+import {
+	LoginScreen,
+	HomeScreen,
+	RegistrationScreen,
+	LessonScreen,
+} from "./screens";
 import { firebase } from "./src/firebase/config";
+import { roundToNearestPixel } from "react-native/Libraries/Utilities/PixelRatio";
 
 const Stack = createStackNavigator();
 
 LogBox.ignoreLogs(["Setting a timer"]);
 
-export default function App({ navigation }) {
+export default function App({ navigation, route }) {
 	const [loading, setLoading] = useState(true);
 	const [user, setUser] = useState(null);
 
@@ -52,27 +58,32 @@ export default function App({ navigation }) {
 		<NavigationContainer>
 			<Stack.Navigator>
 				{user ? (
-					<Stack.Screen
-						name="Home"
-						options={{
-							headerShown: false,
-							// headerTitleAlign: "center",
-							// title: "Welcome " + user.fullName,
-						}}
-					>
-						{(props) => <HomeScreen {...props} extraData={user} />}
-					</Stack.Screen>
-				) : (
 					<>
 						<Stack.Screen
-							name="Login"
-							component={LoginScreen}
-							extraData={user}
+							name="Home"
+							options={{
+								headerShown: false,
+								// headerTitleAlign: "center",
+								// title: "Welcome " + user.fullName,
+							}}
+							component={HomeScreen}
 						/>
+
+						<Stack.Screen
+							name="Lesson"
+							options={({ route }) => ({
+								title: route.params.title,
+								headerTitleAlign: "center",
+							})}
+							component={LessonScreen}
+						/>
+					</>
+				) : (
+					<>
+						<Stack.Screen name="Login" component={LoginScreen} />
 						<Stack.Screen
 							name="Registration"
 							component={RegistrationScreen}
-							extraData={user}
 						/>
 					</>
 				)}

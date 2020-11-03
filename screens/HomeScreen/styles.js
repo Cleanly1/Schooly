@@ -1,4 +1,7 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Dimensions } from "react-native";
+
+const deviceWidth = Dimensions.get("window").width;
+const deviceHeight = Dimensions.get("window").height;
 
 export default StyleSheet.create({
 	container: {
@@ -6,10 +9,11 @@ export default StyleSheet.create({
 		alignItems: "center",
 	},
 	header: {
+		alignSelf: "flex-start",
 		flexDirection: "row",
-		width: "100%",
 		alignItems: "center",
 		justifyContent: "center",
+		width: deviceWidth < 600 ? "100%" : "50%",
 		padding: 20,
 	},
 	headerText: {
@@ -30,6 +34,7 @@ export default StyleSheet.create({
 		borderRadius: 5,
 		shadowColor: "black",
 	},
+
 	formContainer: {
 		flexDirection: "row",
 		height: 80,

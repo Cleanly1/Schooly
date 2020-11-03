@@ -4,7 +4,7 @@ import Button from "../../components/Button/Button";
 import styles from "./styles";
 import { firebase } from "../../src/firebase/config";
 
-export default function LoginScreen({ navigation }, props) {
+export default function LoginScreen({ navigation }) {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 
@@ -27,7 +27,6 @@ export default function LoginScreen({ navigation }, props) {
 							alert("User does not exist anymore.");
 							return;
 						}
-						console.log("hello");
 						const user = firestoreDocument.data();
 						// navigation.navigate("Home", user);
 					})
@@ -39,12 +38,6 @@ export default function LoginScreen({ navigation }, props) {
 				alert(error);
 			});
 	};
-
-	useEffect(() => {
-		// if (props.extradata) {
-		// 	navigation.navigate("Home", { user });
-		// }
-	}, []);
 
 	return (
 		<View style={styles.container}>
