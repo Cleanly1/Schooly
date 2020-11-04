@@ -9,11 +9,12 @@ export default function HomeScreen({ navigation, extraData }, props) {
 	const [id, setId] = useState("");
 	const [classes, setClasses] = useState([]);
 	const [title, setTitle] = useState("");
-	const [haveLoaded, setHaveLoaded] = useState(false);
+	// const [haveLoaded, setHaveLoaded] = useState(false);
 	const [show, setShow] = useState(false);
 	const [classID, setClassID] = useState("");
 	const [joinClassID, setJoinClassID] = useState("");
 	const [classIDs, setClassIDs] = useState({});
+	const [classData, setClassData] = useState({});
 
 	useEffect(() => {
 		const uid = firebase.auth().currentUser.uid;
@@ -47,7 +48,7 @@ export default function HomeScreen({ navigation, extraData }, props) {
 				setClasses(array);
 			});
 		setClassID(getRandomID());
-		setHaveLoaded(true);
+		// setHaveLoaded(true);
 	}, []);
 
 	const signOut = () => {
@@ -141,49 +142,58 @@ export default function HomeScreen({ navigation, extraData }, props) {
 		setShow(!show);
 	};
 
-	const joinClass = () => {
+	const joinClass = async () => {
 		if (joinClassID === "" || (joinClassID.length < 5 && joinClassID > 6)) {
 			alert("Class ID must be 5 digits long");
 			return;
 		}
 
-		let classData = {};
+		// let classData = {};
 
-		const classRef = firebase.database().ref("classes/" + joinClassID);
+		// const classRef = firebase.database().ref("classes/" + joinClassID);
 
-		classRef.on("value", (snapshot) => {
-			if (snapshot.val() === null) {
-				classData = null;
-				return;
-			}
+		const data = await new Promise((resolve) => {
+			firebase
+				.firestore()
+				.collection("classes")
+				.doc(joinClassID)
+				.get()
+				.then((snapshot) => {
+					if (snapshot.data() == undefined) {
+						resolve(snapshot.data());
+						return;
+					}
 
-			classData = snapshot.val();
+					resolve(snapshot.data());
+				});
 		});
 
-		if (classData === null) {
+		// console.log(classData);
+
+		if (data == undefined) {
 			alert("Couldn´t find the class you were looking for");
+			// setClassData({});
 			return;
 		}
 
-		let requesters = classData.requesting;
+		// const userRef = firebase.firestore().collection("users").doc(id);
 
-		if (requesters == undefined) {
-			classData["requesting"] = [user.id];
-		} else {
-			if (classData.requesting.includes(user.id)) {
-				alert("You have already reuested to join this class");
-				return;
-			}
-			classData.requesting = [...requesters, user.id];
+		let requesters = data.requesting;
+
+		if (requesters.includes(id)) {
+			alert("You have already asked to join this class");
+			return;
 		}
+		//userRef
+		const update = {
+			requesting: firebase.firestore.FieldValue.arrayUnion(id),
+		};
 
-		var updates = {};
-		updates["/classes/" + joinClassID] = classData;
-		updates[
-			"/user-classes/" + classData.owner + "/" + joinClassID
-		] = classData;
-
-		firebase.database().ref().update(updates);
+		firebase
+			.firestore()
+			.collection("classes")
+			.doc(joinClassID)
+			.update(update);
 	};
 
 	const goToLesson = (lessonID, title) => {
