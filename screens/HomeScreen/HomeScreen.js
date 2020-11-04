@@ -7,42 +7,47 @@ import { firebase } from "../../src/firebase/config";
 export default function HomeScreen({ navigation, extraData }, props) {
 	const [user, setUser] = useState("");
 	const [id, setId] = useState("");
-	const [classes, setClasses] = useState({});
+	const [classes, setClasses] = useState([]);
 	const [title, setTitle] = useState("");
 	const [haveLoaded, setHaveLoaded] = useState(false);
 	const [show, setShow] = useState(false);
 	const [classID, setClassID] = useState("");
 	const [joinClassID, setJoinClassID] = useState("");
+	const [classIDs, setClassIDs] = useState({});
 
 	useEffect(() => {
 		const uid = firebase.auth().currentUser.uid;
-		console.log(props);
-		firebase
-			.firestore()
-			.collection("users")
-			.doc(uid)
+		const userRef = firebase.firestore().collection("users").doc(uid);
+
+		userRef.get().then((firestoreDocument) => {
+			if (!firestoreDocument.exists) {
+				alert("User does not exist anymore.");
+				return;
+			}
+			const user = firestoreDocument.data();
+			setUser(user);
+			setId(user.id);
+		});
+
+		// Get all of the users classes
+
+		const ref = firebase.database().ref("user-classes/" + `${uid}`);
+		const classRef = firebase.firestore().collection("classes");
+
+		classRef
+			.where("owner", "==", `${uid}`)
 			.get()
-			.then((firestoreDocument) => {
-				if (!firestoreDocument.exists) {
-					alert("User does not exist anymore.");
-					return;
-				}
-				const user = firestoreDocument.data();
-				setUser(user);
-				setId(user.id);
+			.then((querySnapshot) => {
+				var array = [];
+				querySnapshot.forEach((doc) => {
+					// doc.data() is never undefined for query doc snapshots
+					//console.log(doc.id);
+					array.push(doc.data());
+				});
+				setClasses(array);
 			});
-
-		if (!haveLoaded) {
-			// Get all of the users classes
-			const ref = firebase.database().ref("user-classes/" + `${uid}`);
-
-			ref.on("value", (snapshot) => {
-				setClasses(snapshot.val());
-				if (snapshot.val() == null) setClasses({});
-			});
-
-			setHaveLoaded(true);
-		}
+		setClassID(getRandomID());
+		setHaveLoaded(true);
 	}, []);
 
 	const signOut = () => {
@@ -58,15 +63,22 @@ export default function HomeScreen({ navigation, extraData }, props) {
 	const getRandomID = () => {
 		let number = Math.floor(Math.random() * 100000 + 1);
 
-		let classes = {};
-		const ref = firebase.database().ref("classes/");
+		firebase
+			.firestore()
+			.collection("classes")
+			.where("__name__", "==", `${number}`)
+			.get()
+			.then((querySnapshot) => {
+				querySnapshot.forEach((doc) => {
+					// doc.data() is never undefined for query doc snapshots
+					//console.log(doc.id);
+					const document = doc.data();
+					setClassIDs(doc.id);
+				});
+			});
 
-		ref.on("value", (snapshot) => {
-			classes = snapshot.val();
-			if (snapshot.val() == null) classes = {};
-		});
-		while (Object.keys(classes).indexOf(number) != -1) {
-			number = Math.floor(Math.random() * 10000 + 1);
+		while (classIDs === number) {
+			number = Math.floor(Math.random() * 100000 + 1);
 		}
 
 		number = number.toString();
@@ -90,20 +102,36 @@ export default function HomeScreen({ navigation, extraData }, props) {
 			);
 			return;
 		}
+		const userRef = firebase.firestore().collection("users").doc(id);
+		const docRef = firebase.firestore().collection("classes").doc(classID);
+
 		const classData = {
+			id: classID,
 			title: title,
 			owner: id,
-			members: [id],
+			members: [userRef],
 			requesting: [],
 		};
-		firebase
-			.database()
-			.ref("classes/" + classID)
-			.set(classData);
-		firebase
-			.database()
-			.ref("user-classes/" + `${user.id}/` + classID)
-			.set(classData);
+
+		docRef
+			.set(classData)
+			.then(function () {
+				//console.log("Document successfully written!");
+			})
+			.catch(function (error) {
+				console.error("Error writing document: ", error);
+			});
+
+		userRef
+			.update({
+				classes: firebase.firestore.FieldValue.arrayUnion(docRef),
+			})
+			.then(function () {
+				//console.log("Document successfully written!");
+			})
+			.catch(function (error) {
+				console.error("Error writing document: ", error);
+			});
 
 		let update = classes;
 		update[classID] = classData;
@@ -244,17 +272,15 @@ export default function HomeScreen({ navigation, extraData }, props) {
 				<View>
 					<Text style={{}}>Your classes:</Text>
 					{classes &&
-						Object.keys(classes).map((key, index) => {
-							const classData = classes[key];
-
+						classes.map((data, index) => {
 							return (
 								<View key={index} style={{ width: 200 }}>
-									<Text>{classData.title}</Text>
+									<Text>{data.title}</Text>
 									<Button
 										style={{ marginTop: 5 }}
 										text="Go to lesson"
 										onPress={() => {
-											goToLesson(key, classData.title);
+											goToLesson(data.id, data.title);
 										}}
 									/>
 								</View>

@@ -7,7 +7,7 @@ import {
 	LoginScreen,
 	HomeScreen,
 	RegistrationScreen,
-	LessonScreen,
+	ClassScreen,
 } from "./screens";
 import { firebase } from "./src/firebase/config";
 import { roundToNearestPixel } from "react-native/Libraries/Utilities/PixelRatio";
@@ -75,7 +75,7 @@ export default function App({ navigation, route }) {
 								title: route.params.title,
 								headerTitleAlign: "center",
 							})}
-							component={LessonScreen}
+							component={ClassScreen}
 						/>
 					</>
 				) : (
