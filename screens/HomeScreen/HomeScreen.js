@@ -14,7 +14,6 @@ export default function HomeScreen({ navigation, extraData }, props) {
 	const [classID, setClassID] = useState("");
 	const [joinClassID, setJoinClassID] = useState("");
 	const [classIDs, setClassIDs] = useState({});
-	const [classData, setClassData] = useState({});
 
 	useEffect(() => {
 		const uid = firebase.auth().currentUser.uid;
@@ -32,17 +31,15 @@ export default function HomeScreen({ navigation, extraData }, props) {
 
 		// Get all of the users classes
 
-		const ref = firebase.database().ref("user-classes/" + `${uid}`);
 		const classRef = firebase.firestore().collection("classes");
 
 		classRef
-			.where("owner", "==", `${uid}`)
+			.where("members", "array-contains", `${uid}`)
 			.get()
 			.then((querySnapshot) => {
 				var array = [];
 				querySnapshot.forEach((doc) => {
 					// doc.data() is never undefined for query doc snapshots
-					//console.log(doc.id);
 					array.push(doc.data());
 				});
 				setClasses(array);
@@ -110,22 +107,20 @@ export default function HomeScreen({ navigation, extraData }, props) {
 			id: classID,
 			title: title,
 			owner: id,
-			members: [userRef],
+			members: [id],
 			requesting: [],
 		};
 
 		docRef
 			.set(classData)
-			.then(function () {
-				//console.log("Document successfully written!");
-			})
+			.then(function () {})
 			.catch(function (error) {
 				console.error("Error writing document: ", error);
 			});
 
 		userRef
 			.update({
-				classes: firebase.firestore.FieldValue.arrayUnion(docRef),
+				classes: firebase.firestore.FieldValue.arrayUnion(classID),
 			})
 			.then(function () {
 				//console.log("Document successfully written!");
@@ -194,6 +189,8 @@ export default function HomeScreen({ navigation, extraData }, props) {
 			.collection("classes")
 			.doc(joinClassID)
 			.update(update);
+
+		setShow(!show);
 	};
 
 	const goToLesson = (lessonID, title) => {
