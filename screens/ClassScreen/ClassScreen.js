@@ -1,21 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import {
+	View,
+	Text,
+	TouchableOpacity,
+	ScrollView,
+	TextInput,
+} from "react-native";
 import styles from "./styles";
 import Button from "../../components/Button/Button";
 import { firebase } from "../../src/firebase/config";
 
-export default function classScreen({ navigation, route }) {
+export default function ClassScreen({ navigation, route }) {
 	const [classData, setClassData] = useState({});
 	const [ID, setID] = useState();
 	const [haveLoaded, setHaveLoaded] = useState(false);
 	const [users, setUsers] = useState([]);
 	const [reqLoaded, setReqLoaded] = useState(false);
 	const [memberList, setMemberList] = useState([]);
-	const [juggle, setJuggle] = useState([]);
+	const [lessonList, setLessonList] = useState([]);
+	const [user, setUser] = useState("");
+	const [show, setShow] = useState(false);
+	const [lessonTitle, setLessonTitle] = useState("");
+	const [lessonID, setLessonID] = useState();
 
 	useEffect(() => {
 		const classID = route.params.id;
 		setID(classID);
+		setUser(route.params.user);
 
 		// setClassID(route.params.id);
 
@@ -68,6 +79,23 @@ export default function classScreen({ navigation, route }) {
 						array.push(snapshot.data());
 					});
 					setMemberList(array);
+				});
+
+			firebase
+				.firestore()
+				.collection("classes")
+				.doc(classID)
+				.collection("lessons")
+				.get()
+				.then((querySnapshot) => {
+					let array = [];
+
+					querySnapshot.forEach((snapshot) => {
+						let data = snapshot.data();
+						data[id] = snapshot.id;
+						array.push(data);
+					});
+					setLessonList(array);
 				});
 		}
 	}, []);
@@ -122,6 +150,35 @@ export default function classScreen({ navigation, route }) {
 		});
 	};
 
+	const getRandomID = () => {
+		let number = Math.floor(Math.random() * 1000000 + 1);
+
+		firebase
+			.firestore()
+			.collection("classes")
+			.doc(ID)
+			.collection("lessons")
+			.where("__name__", "==", `${number}`)
+			.get()
+			.then((querySnapshot) => {
+				querySnapshot.forEach((doc) => {
+					// doc.data() is never undefined for query doc snapshots
+					//console.log(doc.id);
+					const document = doc.data();
+					setLessonID(doc.id);
+				});
+			});
+
+		while (lessonID === number) {
+			number = Math.floor(Math.random() * 1000000 + 1);
+		}
+
+		number = number.toString();
+		while (number.length < 6) number = "0" + number;
+
+		return number;
+	};
+
 	const acceptUser = (user) => {
 		const classRef = firebase.firestore().collection("classes").doc(ID);
 		const userRef = firebase.firestore().collection("users").doc(user.id);
@@ -143,9 +200,46 @@ export default function classScreen({ navigation, route }) {
 		});
 	};
 
+	const createLesson = () => {
+		if (lessonTitle === "" || lessonTitle.length <= 3) {
+			alert(
+				"Lesson must have a title that is more than 3 characters long"
+			);
+			return;
+		}
+
+		const id = getRandomID();
+
+		const newLesson = {
+			id: id,
+			title: lessonTitle,
+			desc: "Please edit the lessons/assignments description",
+		};
+
+		firebase
+			.firestore()
+			.collection("classes")
+			.doc(ID)
+			.collection("lessons")
+			.doc(id)
+			.set(newLesson);
+
+		setLessonList([...lessonList, newLesson]);
+
+		setShow(!show);
+	};
+
+	const goToLesson = (data) => {
+		navigation.navigate("Lesson", {
+			data: data,
+			title: data.title,
+			user: user,
+		});
+	};
+
 	if (!haveLoaded) {
 		return (
-			<View>
+			<View style={styles.container}>
 				<Text>Loading...</Text>
 			</View>
 		);
@@ -153,45 +247,146 @@ export default function classScreen({ navigation, route }) {
 
 	return (
 		<View style={styles.container}>
-			{users && users.length > 0 ? (
-				<View>
-					<Text>Requesting to join the Class:</Text>
-					{users.map((user, i) => {
-						return (
-							<View key={i}>
-								<Text>{user.fullName}</Text>
-								<Text>{user.id}</Text>
-								<TouchableOpacity
-									style={{
-										width: 30,
-										padding: 20,
-										borderRadius: "50%",
-										borderWidth: 5,
-										borderColor: "green",
-										backgroundColor: "darkgreen",
-									}}
-									onPress={() => {
-										acceptUser(user);
-									}}
-								></TouchableOpacity>
-							</View>
-						);
-					})}
+			<View style={styles.header}>
+				<Button
+					style={{ width: "33%" }}
+					text="Back"
+					onPress={() => navigation.goBack()}
+				></Button>
+				<Text style={styles.headerText}>{classData.title}</Text>
+				{user.type == "Teacher" ? (
+					<Button
+						style={{ width: "33%", alignSelf: "flex-end" }}
+						text="Options"
+						onPress={() => {
+							setShow(!show);
+						}}
+					></Button>
+				) : null}
+			</View>
+			{show && (
+				<View style={styles.optionsContainer}>
+					{user.type == "Teacher" ? (
+						<View
+							style={{
+								width: "100%",
+								alignItems: "center",
+							}}
+						>
+							<TextInput
+								style={styles.input}
+								placeholder="Lesson Title"
+								placeholderTextColor="#aaaaaa"
+								onChangeText={(text) => setLessonTitle(text)}
+								value={lessonTitle}
+								underlineColorAndroid="transparent"
+								autoCapitalize="none"
+							/>
+							<Button
+								style={{
+									width: "100%",
+									marginTop: 5,
+								}}
+								text="Setup a new lesson"
+								onPress={() => createLesson()}
+							/>
+						</View>
+					) : null}
 				</View>
-			) : null}
-			<View>
-				<Text>Members in class:</Text>
-				{memberList && memberList.length > 0
-					? memberList.map((memberUser, i) => {
-							return (
-								<View key={i}>
-									<Text>
-										{memberUser.fullName}: {memberUser.type}
-									</Text>
-								</View>
-							);
-					  })
-					: null}
+			)}
+
+			<View style={styles.contentContainer}>
+				<View style={{ width: "45%", marginRight: 5 }}>
+					<View>
+						<Text style={styles.titleText}>Members in class:</Text>
+						<ScrollView style={styles.list}>
+							{memberList &&
+							memberList.length > 0 &&
+							user.id == classData.owner
+								? memberList.map((memberUser, i) => {
+										return (
+											<View
+												key={i}
+												style={{
+													width: "100%",
+													borderBottomColor: "grey",
+													borderBottomWidth: 2,
+												}}
+											>
+												<Text
+													style={{
+														width: "100%",
+														fontSize: 16,
+														padding: 5,
+													}}
+												>
+													{`${memberUser.fullName}: ${memberUser.type}`}
+												</Text>
+											</View>
+										);
+								  })
+								: null}
+						</ScrollView>
+					</View>
+					{users && users.length > 0 && user.id == classData.owner ? (
+						<View>
+							<Text>Requesting to join the Class:</Text>
+							{users.map((user, i) => {
+								return (
+									<View key={i}>
+										<Text>{user.fullName}</Text>
+										<Text>{user.id}</Text>
+										<TouchableOpacity
+											style={{
+												width: 30,
+												padding: 20,
+												borderRadius: "50%",
+												borderWidth: 5,
+												borderColor: "green",
+												backgroundColor: "darkgreen",
+											}}
+											onPress={() => {
+												acceptUser(user);
+											}}
+										></TouchableOpacity>
+									</View>
+								);
+							})}
+						</View>
+					) : null}
+				</View>
+				<View style={{ width: "45%", marginLeft: 5 }}>
+					<Text style={styles.titleText}>Lessons:</Text>
+					<ScrollView style={styles.list}>
+						{lessonList && lessonList.length > 0
+							? lessonList.map((lessonData, i) => {
+									return (
+										<TouchableOpacity
+											key={i}
+											style={{
+												width: "100%",
+												borderBottomColor: "grey",
+												borderBottomWidth: 2,
+											}}
+											onPress={() =>
+												goToLesson(lessonData)
+											}
+										>
+											<Text
+												style={{
+													width: "100%",
+													fontSize: 16,
+													padding: 5,
+												}}
+											>
+												{`${lessonData.title}`}
+											</Text>
+										</TouchableOpacity>
+									);
+							  })
+							: null}
+					</ScrollView>
+				</View>
 			</View>
 		</View>
 	);

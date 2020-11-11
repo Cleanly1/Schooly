@@ -194,7 +194,11 @@ export default function HomeScreen({ navigation, extraData }, props) {
 	};
 
 	const goToLesson = (lessonID, title) => {
-		navigation.navigate("Lesson", { id: lessonID, title: title });
+		navigation.navigate("Class", {
+			id: lessonID,
+			title: title,
+			user: user,
+		});
 	};
 
 	return (
@@ -294,11 +298,22 @@ export default function HomeScreen({ navigation, extraData }, props) {
 							);
 						})}
 				</View>
-				<Button
-					style={{ width: "100%", marginTop: 5 }}
-					text="Sign out"
-					onPress={() => signOut()}
-				/>
+				<View
+					style={{
+						width: "90%",
+						alignItems: "center",
+						margin: 20,
+						marginTop: 50,
+					}}
+				>
+					<Text style={{ fontSize: 18 }}>Settings</Text>
+
+					<Button
+						style={{ width: "50%", marginTop: 5 }}
+						text="Sign out"
+						onPress={() => signOut()}
+					/>
+				</View>
 			</View>
 		</ScrollView>
 	);

@@ -8,9 +8,9 @@ import {
 	HomeScreen,
 	RegistrationScreen,
 	ClassScreen,
+	LessonScreen,
 } from "./screens";
 import { firebase } from "./src/firebase/config";
-import { roundToNearestPixel } from "react-native/Libraries/Utilities/PixelRatio";
 
 const Stack = createStackNavigator();
 
@@ -70,12 +70,19 @@ export default function App({ navigation, route }) {
 						/>
 
 						<Stack.Screen
+							name="Class"
+							options={{
+								headerShown: false,
+							}}
+							component={ClassScreen}
+						/>
+						<Stack.Screen
 							name="Lesson"
+							component={LessonScreen}
 							options={({ route }) => ({
 								title: route.params.title,
 								headerTitleAlign: "center",
 							})}
-							component={ClassScreen}
 						/>
 					</>
 				) : (
