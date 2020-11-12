@@ -15,7 +15,6 @@ export default function ClassScreen({ navigation, route }) {
 	const [ID, setID] = useState();
 	const [haveLoaded, setHaveLoaded] = useState(false);
 	const [users, setUsers] = useState([]);
-	const [reqLoaded, setReqLoaded] = useState(false);
 	const [memberList, setMemberList] = useState([]);
 	const [lessonList, setLessonList] = useState([]);
 	const [user, setUser] = useState("");
@@ -61,9 +60,6 @@ export default function ClassScreen({ navigation, route }) {
 							getUser(id);
 						});
 					}
-
-					setHaveLoaded(true);
-					setReqLoaded(true);
 				});
 
 			firebase
@@ -76,10 +72,12 @@ export default function ClassScreen({ navigation, route }) {
 					// 	alert("No Members");
 					// 	return;
 					// }
+
 					let array = [];
 					querySnapshot.forEach((snapshot) => {
 						array.push(snapshot.data());
 					});
+
 					setMemberList(array);
 				});
 
@@ -94,10 +92,13 @@ export default function ClassScreen({ navigation, route }) {
 
 					querySnapshot.forEach((snapshot) => {
 						let data = snapshot.data();
-						data[id] = snapshot.id;
 						array.push(data);
 					});
 					setLessonList(array);
+					setHaveLoaded(true);
+				})
+				.catch((error) => {
+					console.log(error);
 				});
 		}
 	}, []);
@@ -236,6 +237,7 @@ export default function ClassScreen({ navigation, route }) {
 			data: data,
 			title: data.title,
 			user: user,
+			classid: ID,
 		});
 	};
 
@@ -275,6 +277,14 @@ export default function ClassScreen({ navigation, route }) {
 								alignItems: "center",
 							}}
 						>
+							<Text
+								style={[
+									styles.titleText,
+									{ fontWeight: "bold" },
+								]}
+							>
+								Class ID: {ID}
+							</Text>
 							<Text style={styles.titleText}>
 								Create a lesson
 							</Text>
@@ -305,10 +315,9 @@ export default function ClassScreen({ navigation, route }) {
 					<View>
 						<Text style={styles.titleText}>Members in class:</Text>
 						<ScrollView style={styles.list}>
-							{memberList &&
-							memberList.length > 0 &&
-							user.id == classData.owner
+							{memberList && memberList.length != 0
 								? memberList.map((memberUser, i) => {
+										console.log(memberUser);
 										return (
 											<View
 												key={i}

@@ -6,4 +6,8 @@ export default StyleSheet.create({
 		alignItems: "center",
 		width: "100%",
 	},
+
+	titleText: {
+		fontSize: 16,
+	},
 });

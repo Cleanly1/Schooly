@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer, useState } from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import { View, Text, TouchableOpacity, Image, Platform } from "react-native";
 import styles from "./styles";
 import Button from "../../components/Button/Button";
 import * as ImagePicker from "expo-image-picker";
@@ -7,6 +7,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
 import * as WebBrowser from "expo-web-browser";
 import { firebase } from "../../src/firebase/config";
+import { TextInput } from "react-native-gesture-handler";
 
 export default function LessonScreen({ navigation, route }) {
 	const [lessonData, setLessonData] = useState();
@@ -14,10 +15,12 @@ export default function LessonScreen({ navigation, route }) {
 	const [images, setImages] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [docs, setDocs] = useState([]);
+	const [updatedText, setUpdatedText] = useState();
+	const [reload, setReload] = useState(true);
 
 	useEffect(() => {
-		setUser(route.params.user);
-		setLessonData(route.params.data);
+		const params = route.params;
+		setUser(params.user);
 
 		if (loading) {
 			firebase
@@ -29,9 +32,6 @@ export default function LessonScreen({ navigation, route }) {
 						// All the prefixes under listRef.
 						// You may call listAll() recursively on them.
 						// console.log(folderRef);
-						folderRef.forEach((hi) => {
-							console.log("helllo", hi);
-						});
 					});
 					res.items.forEach(async (itemRef) => {
 						// All the items under listRef.
@@ -68,6 +68,29 @@ export default function LessonScreen({ navigation, route }) {
 				.catch((error) => {
 					console.log(error);
 					// Uh-oh, an error occurred!
+				});
+
+			firebase
+				.firestore()
+				.collection("classes")
+				.doc(params.classid)
+				.collection("lessons")
+				.doc(params.data.id)
+				.get()
+				.then((snapshot) => {
+					setLessonData(snapshot.data());
+					setUpdatedText(snapshot.data().desc);
+				});
+
+			firebase
+				.firestore()
+				.collection("classes")
+				.doc(params.classid)
+				.collection("lessons")
+				.doc(params.data.id)
+				.onSnapshot((snapshot) => {
+					setLessonData(snapshot.data());
+					setUpdatedText(snapshot.data().desc);
 				});
 		}
 	}, []);
@@ -110,7 +133,7 @@ export default function LessonScreen({ navigation, route }) {
 
 		const blob = await response.blob();
 
-		firebase
+		await firebase
 			.storage()
 			.ref()
 			.child(`images/${lessonData.id}/${imageName}`)
@@ -119,7 +142,21 @@ export default function LessonScreen({ navigation, route }) {
 				alert(error);
 			});
 
-		setImages([...images, uri]);
+		firebase
+			.storage()
+			.ref()
+			.child(`images/${lessonData.id}/${imageName}`)
+			.getDownloadURL()
+			.then((url) => {
+				console.log(url);
+				setImages([...images, url]);
+			})
+			.catch((error) => {
+				console.log(error);
+				// Uh-oh, an error occurred!
+			});
+
+		// setImages([...images, uri]);
 		alert("Image uploaded successfully");
 	};
 
@@ -139,7 +176,7 @@ export default function LessonScreen({ navigation, route }) {
 
 		const blob = await response.blob();
 
-		firebase
+		await firebase
 			.storage()
 			.ref()
 			.child(`files/${lessonData.id}/${docName}`)
@@ -148,15 +185,29 @@ export default function LessonScreen({ navigation, route }) {
 				alert(error);
 			});
 
-		setDocs([...docs, uri]);
+		firebase
+			.storage()
+			.ref()
+			.child(`files/${lessonData.id}/${docName}`)
+			.getDownloadURL()
+			.then((url) => {
+				console.log(url);
+				setDocs([...docs, url]);
+			})
+			.catch((error) => {
+				console.log(error);
+				// Uh-oh, an error occurred!
+			});
+
 		alert("Document uploaded successfully");
-		console.log(pickerResult);
 	};
 
-	const turnInWork = async () => {};
+	const openFile = async (uri) => {
+		if (Platform.OS === "ios") {
+			WebBrowser.dismissBrowser();
+		}
 
-	const openFile = async (uri, docName) => {
-		WebBrowser.openBrowserAsync(uri);
+		await WebBrowser.openBrowserAsync(uri);
 		// FileSystem.downloadAsync(uri, FileSystem.documentDirectory + docName)
 		// 	.then(({ uri }) => {
 		// 		console.log("Finished downloading to ", uri);
@@ -164,10 +215,33 @@ export default function LessonScreen({ navigation, route }) {
 		// 	.catch((error) => {
 		// 		console.error(error);
 		// 	});
+
+		if (Platform.OS === "ios") {
+			WebBrowser.dismissBrowser();
+		}
 	};
 
-	const openImage = async (uri) => {
-		WebBrowser.openBrowserAsync(uri);
+	const turnInWork = async () => {};
+
+	const updateText = async () => {
+		let update = lessonData;
+
+		update.desc = updatedText;
+
+		const lessonRef = firebase
+			.firestore()
+			.collection("classes")
+			.doc(route.params.classid)
+			.collection("lessons")
+			.doc(lessonData.id);
+
+		await lessonRef.update(update);
+
+		// setLessonData(update);
+		// setUpdatedText(update.desc);
+
+		console.log(lessonData);
+		alert("Description updated");
 	};
 
 	return (
@@ -182,40 +256,85 @@ export default function LessonScreen({ navigation, route }) {
 				}}
 			>
 				<Text style={{ fontSize: 16 }}>Description: </Text>
-				<Text
-					style={{
-						width: "100%",
-						minHeight: 50,
-						borderWidth: 2,
-						padding: 5,
-						backgroundColor: "white",
-					}}
-				>
-					{lessonData.desc}
-				</Text>
+
+				{user.type === "Teacher" ? (
+					<View>
+						<TextInput
+							style={{
+								width: "100%",
+								minHeight: 50,
+								borderWidth: 2,
+								padding: 5,
+								backgroundColor: "white",
+							}}
+							placeholderTextColor="#aaaaaa"
+							onChangeText={(text) => setUpdatedText(text)}
+							value={updatedText}
+							underlineColorAndroid="transparent"
+							multiline={true}
+							autoCapitalize="none"
+						/>
+						<Button
+							style={{
+								borderWidth: 1,
+								margin: 5,
+								backgroundColor: "white",
+								width: "50%",
+							}}
+							textStyle={{
+								color: "lightblue",
+								textShadowColor: "black",
+							}}
+							text="Update Text"
+							onPress={() => {
+								updateText();
+							}}
+						/>
+					</View>
+				) : (
+					<Text
+						style={{
+							width: "100%",
+							minHeight: 50,
+							borderWidth: 2,
+							padding: 5,
+							backgroundColor: "white",
+						}}
+					>
+						{lessonData.desc}
+					</Text>
+				)}
 			</View>
-			<View style={{ margin: 10, flexDirection: "row" }}>
-				{images &&
-					images.map((url, i) => {
-						return (
-							<TouchableOpacity
-								key={i}
-								style={{ margin: 5 }}
-								onPress={() => {
-									openImage(url);
-								}}
-							>
-								<Image
-									style={{ height: 200, width: 150 }}
-									source={{ uri: url }}
-								/>
-							</TouchableOpacity>
-						);
-					})}
+			<View>
+				<Text style={styles.titleText}>Images: </Text>
+				{images && images.length != 0 ? (
+					<View style={{ margin: 10, flexDirection: "row" }}>
+						{images.map((url, i) => {
+							return (
+								<TouchableOpacity
+									key={i}
+									style={{ margin: 5 }}
+									onPress={() => {
+										openFile(url);
+									}}
+								>
+									<Image
+										style={{ height: 200, width: 150 }}
+										source={{ uri: url }}
+									/>
+								</TouchableOpacity>
+							);
+						})}
+					</View>
+				) : (
+					<Text>No images have been added to this lesson</Text>
+				)}
 			</View>
 			<View style={{ margin: 10 }}>
-				<Text>Documents:</Text>
-				{docs &&
+				<Text style={styles.titleText}>
+					Documents: {docs.length != 0 ? "(Press to view)" : null}
+				</Text>
+				{docs && docs.length != 0 ? (
 					docs.map((uri, i) => {
 						const docName = uri.substring(
 							uri.lastIndexOf("/") + 1,
@@ -234,10 +353,13 @@ export default function LessonScreen({ navigation, route }) {
 									openFile(uri, docName);
 								}}
 							>
-								<Text>Document {i}</Text>
+								<Text>{i}: Document </Text>
 							</TouchableOpacity>
 						);
-					})}
+					})
+				) : (
+					<Text>No documents have been added to this lesson</Text>
+				)}
 			</View>
 			{user.type === "Teacher" ? (
 				<View style={{ flexDirection: "row" }}>
