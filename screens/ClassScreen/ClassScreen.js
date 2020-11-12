@@ -56,9 +56,11 @@ export default function ClassScreen({ navigation, route }) {
 
 					// 	//getMembers(member);
 					// });
-					data.requesting.map((id) => {
-						getUser(id);
-					});
+					if (data.requesting !== []) {
+						data.requesting.map((id) => {
+							getUser(id);
+						});
+					}
 
 					setHaveLoaded(true);
 					setReqLoaded(true);
@@ -273,6 +275,9 @@ export default function ClassScreen({ navigation, route }) {
 								alignItems: "center",
 							}}
 						>
+							<Text style={styles.titleText}>
+								Create a lesson
+							</Text>
 							<TextInput
 								style={styles.input}
 								placeholder="Lesson Title"

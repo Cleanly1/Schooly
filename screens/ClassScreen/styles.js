@@ -24,11 +24,11 @@ export default StyleSheet.create({
 	},
 	headerText: {
 		flex: 1,
-		width: "33%",
+		paddingVertical: 10,
+		marginHorizontal: "auto",
 		textAlign: "center",
 		fontSize: 20,
 		fontWeight: "bold",
-		marginRight: 50,
 	},
 
 	list: {
