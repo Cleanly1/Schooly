@@ -258,7 +258,19 @@ export default function ClassScreen({ navigation, route }) {
 					text="Back"
 					onPress={() => navigation.goBack()}
 				></Button>
-				<Text style={styles.headerText}>{classData.title}</Text>
+				<Text
+					style={[
+						styles.headerText,
+						user.type !== "Teacher"
+							? {
+									width: "33%",
+									marginRight: "33%",
+							  }
+							: null,
+					]}
+				>
+					{classData.title}
+				</Text>
 				{user.type === "Teacher" ? (
 					<Button
 						style={{ width: "33%", alignSelf: "flex-end" }}
@@ -312,97 +324,113 @@ export default function ClassScreen({ navigation, route }) {
 			)}
 
 			<View style={styles.contentContainer}>
-				<View style={{ width: "45%", height: "50%", marginRight: 5 }}>
-					<View style={{ height: "100%" }}>
-						<Text style={styles.titleText}>Members in class:</Text>
-						<ScrollView style={styles.list}>
-							{memberList && memberList.length != 0
-								? memberList.map((memberUser, i) => {
-										return (
-											<View
-												key={i}
+				<View style={{ width: "45%", height: "100%", marginRight: 5 }}>
+					<Text style={styles.titleText}>Members in class:</Text>
+					<ScrollView style={styles.list}>
+						{memberList && memberList.length != 0
+							? memberList.map((memberUser, i) => {
+									return (
+										<View
+											key={i}
+											style={{
+												width: "100%",
+												borderBottomColor: "grey",
+												borderBottomWidth: 2,
+											}}
+										>
+											<Text
 												style={{
 													width: "100%",
-													borderBottomColor: "grey",
-													borderBottomWidth: 2,
+													fontSize: 16,
+													padding: 5,
 												}}
 											>
-												<Text
-													style={{
-														width: "100%",
-														fontSize: 16,
-														padding: 5,
-													}}
-												>
-													{`${memberUser.fullName}: ${memberUser.type}`}
-												</Text>
-											</View>
-										);
-								  })
-								: null}
-						</ScrollView>
-					</View>
+												{`${memberUser.fullName}: ${memberUser.type}`}
+											</Text>
+										</View>
+									);
+							  })
+							: null}
+					</ScrollView>
 				</View>
-				<View style={{ width: "45%", height: "50%", marginLeft: 5 }}>
-					<View style={{ height: "100%" }}>
-						<Text style={styles.titleText}>Lessons:</Text>
-						<ScrollView style={styles.list}>
-							{lessonList && lessonList.length > 0
-								? lessonList.map((lessonData, i) => {
-										return (
-											<TouchableOpacity
-												key={i}
+				<View style={{ width: "45%", height: "100%", marginLeft: 5 }}>
+					<Text style={styles.titleText}>
+						Lessons: (Press to view)
+					</Text>
+					<ScrollView style={styles.list}>
+						{lessonList && lessonList.length > 0
+							? lessonList.map((lessonData, i) => {
+									return (
+										<TouchableOpacity
+											key={i}
+											style={{
+												width: "100%",
+												borderBottomColor: "grey",
+												borderBottomWidth: 2,
+											}}
+											onPress={() =>
+												goToLesson(lessonData)
+											}
+										>
+											<Text
 												style={{
 													width: "100%",
-													borderBottomColor: "grey",
-													borderBottomWidth: 2,
+													fontSize: 16,
+													padding: 5,
 												}}
-												onPress={() =>
-													goToLesson(lessonData)
-												}
 											>
-												<Text
-													style={{
-														width: "100%",
-														fontSize: 16,
-														padding: 5,
-													}}
-												>
-													{`${lessonData.title}`}
-												</Text>
-											</TouchableOpacity>
-										);
-								  })
-								: null}
-						</ScrollView>
-					</View>
+												{`${lessonData.title}`}
+											</Text>
+										</TouchableOpacity>
+									);
+							  })
+							: null}
+					</ScrollView>
 				</View>
 			</View>
-			<View style={styles.contentContainer}>
+			<View
+				style={[
+					styles.contentContainer,
+					{ width: "45%", flexDirection: "column" },
+				]}
+			>
 				{users && users.length > 0 && user.id == classData.owner ? (
-					<ScrollView style={styles.list}>
+					<>
 						<Text>Requesting to join the Class:</Text>
-						{users.map((user, i) => {
-							return (
-								<View key={i}>
-									<Text>{user.fullName}</Text>
-									<TouchableOpacity
+						<ScrollView style={[styles.list, { maxHeight: "50%" }]}>
+							{users.map((user, i) => {
+								return (
+									<View
+										key={i}
 										style={{
-											width: 30,
-											padding: 20,
-											borderRadius: 100,
-											borderWidth: 5,
-											borderColor: "green",
-											backgroundColor: "darkgreen",
+											borderBottomWidth: 2,
+											paddingBottom: 5,
+											borderColor: "grey",
+											flexDirection: "row",
+											alignItems: "center",
 										}}
-										onPress={() => {
-											acceptUser(user);
-										}}
-									></TouchableOpacity>
-								</View>
-							);
-						})}
-					</ScrollView>
+									>
+										<Text style={{ marginRight: 30 }}>
+											{user.fullName}
+										</Text>
+										<TouchableOpacity
+											style={{
+												width: 10,
+												padding: 10,
+												borderRadius: 100,
+												borderWidth: 5,
+												borderColor: "green",
+												backgroundColor: "darkgreen",
+											}}
+											onPress={() => {
+												acceptUser(user);
+											}}
+										></TouchableOpacity>
+									</View>
+								);
+							})}
+						</ScrollView>
+					</>
 				) : null}
 			</View>
 		</View>

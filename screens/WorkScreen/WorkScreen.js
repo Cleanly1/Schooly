@@ -386,7 +386,7 @@ export default function WorkScreen({ navigation, route }) {
 				numberOfLines={5}
 			/>
 
-			{user.type === "Student" ? (
+			{user.type === "Student" && !haveWork ? (
 				<View style={{ flexDirection: "row" }}>
 					<Button
 						style={{ margin: 5 }}

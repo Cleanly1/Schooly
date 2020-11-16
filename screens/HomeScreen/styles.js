@@ -26,6 +26,7 @@ export default StyleSheet.create({
 		position: "absolute",
 		width: "80%",
 		alignItems: "center",
+		alignSelf: "center",
 		backgroundColor: "grey",
 		zIndex: 1,
 		top: 60,
@@ -56,5 +57,15 @@ export default StyleSheet.create({
 		backgroundColor: "white",
 		paddingLeft: 16,
 		margin: 5,
+	},
+
+	list: {
+		width: "100%",
+		maxHeight: "80%",
+		borderColor: "black",
+		borderWidth: 1,
+		borderRadius: 5,
+		padding: 5,
+		overflow: "hidden",
 	},
 });

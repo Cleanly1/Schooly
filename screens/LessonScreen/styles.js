@@ -11,4 +11,15 @@ export default StyleSheet.create({
 		fontSize: 16,
 		fontWeight: "bold",
 	},
+
+	list: {
+		width: "50%",
+		maxHeight: "50%",
+		borderColor: "black",
+		borderWidth: 1,
+		borderRadius: 5,
+		padding: 5,
+		overflow: "hidden",
+		backgroundColor: "lightgrey",
+	},
 });

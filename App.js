@@ -98,7 +98,11 @@ export default function App({ navigation, route }) {
 					</>
 				) : (
 					<>
-						<Stack.Screen name="Login" component={LoginScreen} />
+						<Stack.Screen
+							options={{ title: "Schooly" }}
+							name="Login"
+							component={LoginScreen}
+						/>
 						<Stack.Screen
 							name="Registration"
 							component={RegistrationScreen}

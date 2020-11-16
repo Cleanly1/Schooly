@@ -7,7 +7,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
 import * as WebBrowser from "expo-web-browser";
 import { firebase } from "../../src/firebase/config";
-import { TextInput } from "react-native-gesture-handler";
+import { ScrollView, TextInput } from "react-native-gesture-handler";
 
 export default function LessonScreen({ navigation, route }) {
 	const [lessonData, setLessonData] = useState();
@@ -38,7 +38,10 @@ export default function LessonScreen({ navigation, route }) {
 					res.items.forEach(async (itemRef) => {
 						// All the items under listRef.
 						itemRef.getDownloadURL().then((url) => {
-							setImages([...images, url]);
+							setImages([
+								...images,
+								{ name: itemRef.name, url: url },
+							]);
 						});
 						//setImages([...images, url]);
 					});
@@ -60,7 +63,10 @@ export default function LessonScreen({ navigation, route }) {
 					res.items.forEach(async (itemRef) => {
 						// All the items under listRef.
 						itemRef.getDownloadURL().then((url) => {
-							setDocs([...docs, url]);
+							setDocs([
+								...docs,
+								{ name: itemRef.name, url: url },
+							]);
 						});
 						//setImages([...images, url]);
 					});
@@ -95,7 +101,6 @@ export default function LessonScreen({ navigation, route }) {
 				.then((querySnapshot) => {
 					let array = [];
 					querySnapshot.forEach((doc) => {
-						console.log(doc.data());
 						// doc.data() is never undefined for query doc snapshots
 						array.push(doc.data());
 					});
@@ -172,7 +177,7 @@ export default function LessonScreen({ navigation, route }) {
 			.child(`images/${lessonData.id}/${imageName}`)
 			.getDownloadURL()
 			.then((url) => {
-				setImages([...images, url]);
+				setImages([...images, { name: itemRef.name, url: url }]);
 			})
 			.catch((error) => {
 				console.log(error);
@@ -217,7 +222,7 @@ export default function LessonScreen({ navigation, route }) {
 			.child(`files/${lessonData.id}/${docName}`)
 			.getDownloadURL()
 			.then((url) => {
-				setDocs([...docs, url]);
+				setDocs([...docs, { name: itemRef.name, url: url }]);
 			})
 			.catch((error) => {
 				console.log(error);
@@ -294,10 +299,17 @@ export default function LessonScreen({ navigation, route }) {
 					borderRadius: 3,
 					padding: 5,
 					margin: 10,
-					backgroundColor: "lightblue",
 				}}
 			>
-				<Text style={{ fontSize: 16 }}>Description: </Text>
+				<Text
+					style={{
+						fontSize: 18,
+						fontWeight: "bold",
+						marginBottom: 5,
+					}}
+				>
+					Description:{" "}
+				</Text>
 
 				{user.type === "Teacher" ? (
 					<View>
@@ -320,11 +332,10 @@ export default function LessonScreen({ navigation, route }) {
 							style={{
 								borderWidth: 1,
 								margin: 5,
-								backgroundColor: "white",
+
 								width: "50%",
 							}}
 							textStyle={{
-								color: "lightblue",
 								textShadowColor: "black",
 							}}
 							text="Update Text"
@@ -351,18 +362,18 @@ export default function LessonScreen({ navigation, route }) {
 				<Text style={styles.titleText}>Images: </Text>
 				{images && images.length != 0 ? (
 					<View style={{ margin: 10, flexDirection: "row" }}>
-						{images.map((url, i) => {
+						{images.map((imgData, i) => {
 							return (
 								<TouchableOpacity
 									key={i}
 									style={{ margin: 5 }}
 									onPress={() => {
-										openFile(url);
+										openFile(imgData.url);
 									}}
 								>
 									<Image
 										style={{ height: 200, width: 150 }}
-										source={{ uri: url }}
+										source={{ uri: imgData.url }}
 									/>
 								</TouchableOpacity>
 							);
@@ -377,12 +388,7 @@ export default function LessonScreen({ navigation, route }) {
 					Documents: {docs.length != 0 ? "(Press to view)" : null}
 				</Text>
 				{docs && docs.length != 0 ? (
-					docs.map((uri, i) => {
-						const docName = uri.substring(
-							uri.lastIndexOf("/") + 1,
-							uri.length + 1
-						);
-
+					docs.map((doc, i) => {
 						return (
 							<TouchableOpacity
 								key={i}
@@ -390,12 +396,13 @@ export default function LessonScreen({ navigation, route }) {
 									margin: 5,
 									borderWidth: 1,
 									padding: 5,
+									width: "30%",
 								}}
 								onPress={() => {
-									openFile(uri, docName);
+									openFile(doc.url, doc.name);
 								}}
 							>
-								<Text>{i}: Document </Text>
+								<Text>{doc.name} </Text>
 							</TouchableOpacity>
 						);
 					})
@@ -421,7 +428,7 @@ export default function LessonScreen({ navigation, route }) {
 					></Button>
 				</View>
 			) : (
-				<View>
+				<View style={{ width: "80%" }}>
 					<Button
 						text="Turn in your work"
 						onPress={() => {
@@ -431,34 +438,43 @@ export default function LessonScreen({ navigation, route }) {
 				</View>
 			)}
 			{user.type === "Teacher" ? (
-				<View style={{ flex: 1, width: "100%", alignItems: "center" }}>
+				<View
+					style={{
+						flex: 1,
+						width: "80%",
+						alignItems: "flex-start",
+						margin: 10,
+					}}
+				>
 					<Text style={styles.titleText}>Students work:</Text>
-					{worklist &&
-						worklist.map((work, i) => {
-							const student = students.filter((student) => {
-								return student.id == work.id;
-							})[0];
-							//console.log(student.fullName);
-							return (
-								<TouchableOpacity
-									key={i}
-									style={{
-										flex: 1,
-										alignItems: "center",
-										padding: 5,
-										borderWidth: 1,
-										width: 100,
-										maxHeight: 35,
-										margin: 5,
-									}}
-									onPress={() => {
-										goToWork(student);
-									}}
-								>
-									<Text>{student.fullName}</Text>
-								</TouchableOpacity>
-							);
-						})}
+					<ScrollView style={[styles.list, { paddingBottom: 20 }]}>
+						{worklist &&
+							worklist.map((work, i) => {
+								const student = students.filter((student) => {
+									return student.id == work.id;
+								})[0];
+
+								return (
+									<TouchableOpacity
+										key={i}
+										style={{
+											flex: 1,
+											alignItems: "flex-start",
+											padding: 5,
+											borderBottomWidth: 1,
+											borderColor: "grey",
+											maxHeight: 35,
+											margin: 5,
+										}}
+										onPress={() => {
+											goToWork(student);
+										}}
+									>
+										<Text>{student.fullName}</Text>
+									</TouchableOpacity>
+								);
+							})}
+					</ScrollView>
 				</View>
 			) : null}
 		</View>

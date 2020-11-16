@@ -1,13 +1,7 @@
 import React, { useState } from "react";
-import {
-	Image,
-	Text,
-	TextInput,
-	TouchableOpacity,
-	View,
-	Picker,
-} from "react-native";
+import { Image, Text, TextInput, View } from "react-native";
 import Button from "../../components/Button/Button";
+import RadioButton from "../../components/RadioButton/RadioButton";
 import styles from "./styles";
 import { firebase } from "../../src/firebase/config";
 
@@ -66,27 +60,37 @@ export default function RegistrationScreen({ navigation }) {
 				<View
 					style={{
 						alignItems: "center",
-						height: 100,
 						marginBottom: 10,
 					}}
 				>
 					<Text>Please choose what you are:</Text>
-					<Picker
-						selectedValue={type}
-						style={{
-							height: 100,
-							width: 150,
-							overflow: "hidden",
-							justifyContent: "center",
-						}}
-						onValueChange={(itemValue, itemIndex) =>
-							setSelectedType(itemValue)
-						}
-					>
-						<Picker.Item label="Teacher" value="Teacher" />
-						<Picker.Item label="Student" value="Student" />
-						<Picker.Item label="Parent" value="Parent" />
-					</Picker>
+
+					<View style={{ flexDirection: "row", margin: 10 }}>
+						<RadioButton
+							value="Teacher"
+							onPress={() => setSelectedType("Teacher")}
+							customStyle={{
+								backgroundColor:
+									type == "Teacher" ? "#03a2ff" : "white",
+							}}
+						/>
+						<RadioButton
+							value="Student"
+							onPress={() => setSelectedType("Student")}
+							customStyle={{
+								backgroundColor:
+									type == "Student" ? "#03a2ff" : "white",
+							}}
+						/>
+						<RadioButton
+							value="Parent"
+							onPress={() => setSelectedType("Parent")}
+							customStyle={{
+								backgroundColor:
+									type == "Parent" ? "#03a2ff" : "white",
+							}}
+						/>
+					</View>
 				</View>
 				<View
 					style={{
@@ -116,7 +120,7 @@ export default function RegistrationScreen({ navigation }) {
 					<TextInput
 						style={styles.input}
 						placeholderTextColor="#aaaaaa"
-						//secureTextEntry
+						secureTextEntry
 						placeholder="Password"
 						onChangeText={(text) => setPassword(text)}
 						value={password}
@@ -126,7 +130,7 @@ export default function RegistrationScreen({ navigation }) {
 					<TextInput
 						style={styles.input}
 						placeholderTextColor="#aaaaaa"
-						//secureTextEntry
+						secureTextEntry
 						placeholder="Confirm Password"
 						onChangeText={(text) => setConfirmPassword(text)}
 						value={confirmPassword}

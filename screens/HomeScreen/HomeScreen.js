@@ -9,7 +9,7 @@ export default function HomeScreen({ navigation, extraData }, props) {
 	const [id, setId] = useState("");
 	const [classes, setClasses] = useState([]);
 	const [title, setTitle] = useState("");
-	// const [haveLoaded, setHaveLoaded] = useState(false);
+	const [loading, setLoading] = useState(true);
 	const [show, setShow] = useState(false);
 	const [classID, setClassID] = useState("");
 	const [joinClassID, setJoinClassID] = useState("");
@@ -19,41 +19,43 @@ export default function HomeScreen({ navigation, extraData }, props) {
 		const uid = firebase.auth().currentUser.uid;
 		const userRef = firebase.firestore().collection("users").doc(uid);
 
-		userRef.get().then((firestoreDocument) => {
-			if (!firestoreDocument.exists) {
-				alert("User does not exist anymore.");
-				return;
-			}
-			const user = firestoreDocument.data();
-			setUser(user);
-			setId(user.id);
-		});
-
-		// Get all of the users classes
-
-		const classRef = firebase.firestore().collection("classes");
-
-		let unsub = classRef
-			.where("members", "array-contains", `${uid}`)
-			.onSnapshot((querySnapshot) => {
-				var array = [];
-				querySnapshot.forEach((doc) => {
-					// doc.data() is never undefined for query doc snapshots
-					array.push(doc.data());
-				});
-				setClasses(array);
+		if (loading) {
+			userRef.get().then((firestoreDocument) => {
+				if (!firestoreDocument.exists) {
+					alert("User does not exist anymore.");
+					return;
+				}
+				const user = firestoreDocument.data();
+				setUser(user);
+				setId(user.id);
 			});
 
-		setClassID(getRandomID());
-		// setHaveLoaded(true);
+			// Get all of the users classes
 
-		return () => {
-			unsub();
-		};
+			const classRef = firebase.firestore().collection("classes");
+
+			let unsub = classRef
+				.where("members", "array-contains", `${uid}`)
+				.onSnapshot((querySnapshot) => {
+					var array = [];
+					querySnapshot.forEach((doc) => {
+						// doc.data() is never undefined for query doc snapshots
+						array.push(doc.data());
+					});
+					setClasses(array);
+				});
+			setLoading(false);
+			setClassID(getRandomID());
+			// setHaveLoaded(true);
+
+			return () => {
+				unsub();
+			};
+		}
 	}, []);
 
 	const signOut = () => {
-		setUser("");
+		//setUser("");
 		firebase
 			.auth()
 			.signOut()
@@ -72,7 +74,7 @@ export default function HomeScreen({ navigation, extraData }, props) {
 				querySnapshot.forEach((doc) => {
 					// doc.data() is never undefined for query doc snapshots
 					//console.log(doc.id);
-					const document = doc.data();
+
 					setClassIDs(doc.id);
 				});
 			});
@@ -145,21 +147,25 @@ export default function HomeScreen({ navigation, extraData }, props) {
 			return;
 		}
 
+		let docData;
 		// let classData = {};
 
 		// const classRef = firebase.database().ref("classes/" + joinClassID);
 
-		let snapshot = await firebase
+		const classRef = firebase
 			.firestore()
 			.collection("classes")
-			.doc(joinClassID)
-			.get();
+			.doc(joinClassID);
 
-		const data = snapshot.data();
+		try {
+			var doc = await classRef.get();
 
-		// console.log(classData);
+			docData = doc.data();
+		} catch (error) {
+			console.log(error);
+		}
 
-		if (data == undefined) {
+		if (docData == undefined) {
 			alert("Couldn´t find the class you were looking for");
 			// setClassData({});
 			return;
@@ -167,7 +173,7 @@ export default function HomeScreen({ navigation, extraData }, props) {
 
 		// const userRef = firebase.firestore().collection("users").doc(id);
 
-		let requesters = data.requesting;
+		let requesters = docData.requesting;
 
 		if (requesters.includes(id)) {
 			alert("You have already asked to join this class");
@@ -195,120 +201,174 @@ export default function HomeScreen({ navigation, extraData }, props) {
 		});
 	};
 
+	if (loading) {
+		return (
+			<View>
+				<Text>Loading...</Text>
+			</View>
+		);
+	}
+
 	return (
-		<ScrollView>
-			<View
-				style={{
-					flex: 1,
-					width: "100%",
-					alignItems: "center",
-					paddingBottom: 10,
-				}}
-			>
-				<View style={styles.header}>
-					<Text style={styles.headerText}>
-						Welcome {user.fullName}
-					</Text>
-					<Button
-						style={{ width: 100, alignSelf: "flex-end" }}
-						text="Options"
-						onPress={() => {
-							showOptions();
-						}}
-					></Button>
-				</View>
-				{show ? (
-					<View style={styles.optionsContainer}>
-						{user.type == "Teacher" ? (
-							<View
-								style={{
-									width: "100%",
-									alignItems: "center",
-								}}
-							>
-								<Text style={{ fontSize: 20 }}>
-									Class ID: {classID}
-								</Text>
-								<TextInput
-									style={styles.input}
-									placeholder="Class Title"
-									placeholderTextColor="#aaaaaa"
-									onChangeText={(text) => setTitle(text)}
-									value={title}
-									underlineColorAndroid="transparent"
-									autoCapitalize="none"
-								/>
-								<Button
-									style={{
-										width: "100%",
-										marginTop: 5,
-									}}
-									text="Add a Class"
-									onPress={() => createClass()}
-								/>
-							</View>
-						) : null}
+		<View
+			style={{
+				flex: 1,
+				width: "100%",
+				alignItems: "flex-start",
+				paddingBottom: 10,
+			}}
+		>
+			<View style={styles.header}>
+				<Text style={styles.headerText}>Welcome {user.fullName}</Text>
+				<Button
+					style={{ width: 100, alignSelf: "flex-end" }}
+					text="Options"
+					onPress={() => {
+						showOptions();
+					}}
+				></Button>
+			</View>
+			{show ? (
+				<View style={styles.optionsContainer}>
+					{user.type == "Teacher" ? (
 						<View
 							style={{
 								width: "100%",
 								alignItems: "center",
-								marginTop: 10,
 							}}
 						>
-							<Text style={{ fontSize: 20 }}>Join a Class</Text>
+							<Text style={{ fontSize: 20 }}>
+								Class ID: {classID}
+							</Text>
 							<TextInput
 								style={styles.input}
-								placeholder="Class id"
+								placeholder="Class Title"
 								placeholderTextColor="#aaaaaa"
-								onChangeText={(text) => setJoinClassID(text)}
-								value={joinClassID}
+								onChangeText={(text) => setTitle(text)}
+								value={title}
 								underlineColorAndroid="transparent"
 								autoCapitalize="none"
 							/>
 							<Button
-								style={{ width: "100%", marginTop: 5 }}
-								text="Join a Class"
-								onPress={() => joinClass()}
+								style={{
+									width: "100%",
+									marginTop: 5,
+								}}
+								text="Add a Class"
+								onPress={() => createClass()}
 							/>
 						</View>
+					) : null}
+					<View
+						style={{
+							width: "100%",
+							alignItems: "center",
+							marginTop: 10,
+						}}
+					>
+						<Text style={{ fontSize: 20 }}>Join a Class</Text>
+						<TextInput
+							style={styles.input}
+							placeholder="Class id"
+							placeholderTextColor="#aaaaaa"
+							onChangeText={(text) => setJoinClassID(text)}
+							value={joinClassID}
+							underlineColorAndroid="transparent"
+							autoCapitalize="none"
+						/>
+						<Button
+							style={{ width: "100%", marginTop: 5 }}
+							text="Join a Class"
+							onPress={() => joinClass()}
+						/>
 					</View>
-				) : null}
+				</View>
+			) : null}
 
-				<View>
-					<Text style={{}}>Your classes:</Text>
-					{classes &&
-						classes.map((data, index) => {
-							return (
-								<View key={index} style={{ width: 200 }}>
-									<Text>{data.title}</Text>
-									<Button
-										style={{ marginTop: 5 }}
-										text="Go to lesson"
-										onPress={() => {
-											goToLesson(data.id, data.title);
+			<View
+				style={{
+					flex: 1,
+					width: "100%",
+					flexDirection: "row",
+					justifyContent: "center",
+					padding: 10,
+				}}
+			>
+				<View
+					style={{
+						width: "45%",
+						height: "100%",
+						margin: 10,
+						marginRight: 5,
+					}}
+				>
+					<Text style={styles.headerText}>Your classes:</Text>
+					<ScrollView style={styles.list}>
+						{classes &&
+							classes.map((data, index) => {
+								return (
+									<View
+										key={index}
+										style={{
+											width: "100%",
+											flexDirection: "row",
+											alignItems: "center",
+											paddingBottom: 5,
+											borderBottomColor: "grey",
+											borderBottomWidth: 2,
 										}}
-									/>
-								</View>
-							);
-						})}
+									>
+										<Button
+											style={{
+												marginTop: 5,
+												marginRight: 10,
+											}}
+											text="Go to lesson"
+											onPress={() => {
+												goToLesson(data.id, data.title);
+											}}
+										/>
+										<Text
+											style={{
+												fontSize: 18,
+												fontWeight: "bold",
+											}}
+										>
+											{data.title}
+										</Text>
+									</View>
+								);
+							})}
+					</ScrollView>
 				</View>
 				<View
 					style={{
-						width: "90%",
-						alignItems: "center",
-						margin: 20,
-						marginTop: 50,
+						width: "45%",
+						margin: 10,
+						marginLeft: 10,
 					}}
 				>
-					<Text style={{ fontSize: 18 }}>Settings</Text>
-
-					<Button
-						style={{ width: "50%", marginTop: 5 }}
-						text="Sign out"
-						onPress={() => signOut()}
-					/>
+					<Text style={styles.headerText}>Settings:</Text>
+					<View
+						style={{
+							width: "100%",
+							alignItems: "center",
+							padding: 20,
+							borderColor: "black",
+							borderWidth: 1,
+							borderRadius: 5,
+						}}
+					>
+						<Button
+							style={{ width: "50%", marginTop: 5 }}
+							text="Sign out"
+							onPress={() => {
+								signOut();
+							}}
+						/>
+					</View>
 				</View>
 			</View>
-		</ScrollView>
+		</View>
 	);
 }
