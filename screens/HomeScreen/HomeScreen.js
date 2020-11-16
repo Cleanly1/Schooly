@@ -33,10 +33,9 @@ export default function HomeScreen({ navigation, extraData }, props) {
 
 		const classRef = firebase.firestore().collection("classes");
 
-		classRef
+		let unsub = classRef
 			.where("members", "array-contains", `${uid}`)
-			.get()
-			.then((querySnapshot) => {
+			.onSnapshot((querySnapshot) => {
 				var array = [];
 				querySnapshot.forEach((doc) => {
 					// doc.data() is never undefined for query doc snapshots
@@ -44,8 +43,13 @@ export default function HomeScreen({ navigation, extraData }, props) {
 				});
 				setClasses(array);
 			});
+
 		setClassID(getRandomID());
 		// setHaveLoaded(true);
+
+		return () => {
+			unsub();
+		};
 	}, []);
 
 	const signOut = () => {
@@ -145,21 +149,13 @@ export default function HomeScreen({ navigation, extraData }, props) {
 
 		// const classRef = firebase.database().ref("classes/" + joinClassID);
 
-		const data = await new Promise((resolve) => {
-			firebase
-				.firestore()
-				.collection("classes")
-				.doc(joinClassID)
-				.get()
-				.then((snapshot) => {
-					if (snapshot.data() == undefined) {
-						resolve(snapshot.data());
-						return;
-					}
+		let snapshot = await firebase
+			.firestore()
+			.collection("classes")
+			.doc(joinClassID)
+			.get();
 
-					resolve(snapshot.data());
-				});
-		});
+		const data = snapshot.data();
 
 		// console.log(classData);
 

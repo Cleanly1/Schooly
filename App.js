@@ -9,6 +9,7 @@ import {
 	RegistrationScreen,
 	ClassScreen,
 	LessonScreen,
+	WorkScreen,
 } from "./screens";
 import { firebase } from "./src/firebase/config";
 
@@ -21,10 +22,11 @@ export default function App({ navigation, route }) {
 	const [user, setUser] = useState(null);
 
 	useEffect(() => {
-		const usersRef = firebase.firestore().collection("users");
 		firebase.auth().onAuthStateChanged((user) => {
 			if (user) {
-				usersRef
+				firebase
+					.firestore()
+					.collection("users")
 					.doc(user.uid)
 					.get()
 					.then((document) => {
@@ -79,6 +81,15 @@ export default function App({ navigation, route }) {
 						<Stack.Screen
 							name="Lesson"
 							component={LessonScreen}
+							options={({ route }) => ({
+								title: route.params.title,
+								headerTitleAlign: "center",
+							})}
+						/>
+
+						<Stack.Screen
+							name="Work"
+							component={WorkScreen}
 							options={({ route }) => ({
 								title: route.params.title,
 								headerTitleAlign: "center",

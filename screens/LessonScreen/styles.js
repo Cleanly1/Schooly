@@ -9,5 +9,6 @@ export default StyleSheet.create({
 
 	titleText: {
 		fontSize: 16,
+		fontWeight: "bold",
 	},
 });

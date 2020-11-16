@@ -7,17 +7,11 @@ export default StyleSheet.create({
 	container: {
 		flex: 1,
 		alignItems: "center",
-		justifyContent: "center",
+		padding: 10,
 	},
-	title: {},
-	logo: {
-		height: 200,
-		width: 200,
-		alignSelf: "center",
-		margin: 30,
-	},
+	titleText: { fontSize: 16 },
 	input: {
-		height: 48,
+		minHeight: 48,
 		borderRadius: 5,
 		overflow: "hidden",
 		backgroundColor: "white",
@@ -26,23 +20,8 @@ export default StyleSheet.create({
 		marginLeft: 30,
 		marginRight: 30,
 		paddingLeft: 16,
+		padding: 10,
 		minWidth: 200,
 		width: "80%",
-	},
-	footerView: {
-		flex: 1,
-		alignItems: "center",
-		marginTop: 20,
-		minWidth: 200,
-	},
-	footerText: {
-		fontSize: 16,
-		color: "#2e2e2d",
-	},
-	footerLink: {
-		color: "#788eec",
-		fontWeight: "bold",
-		fontSize: 16,
-		width: "100%",
 	},
 });

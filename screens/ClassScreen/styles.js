@@ -10,6 +10,7 @@ export default StyleSheet.create({
 	},
 	contentContainer: {
 		flex: 1,
+		height: "45%",
 		alignItems: "flex-start",
 		flexDirection: "row",
 		padding: 10,

@@ -42,10 +42,12 @@ export default function LoginScreen({ navigation }) {
 	return (
 		<View style={styles.container}>
 			<View style={{ flex: 1, width: "100%" }}>
-				<Image
-					style={styles.logo}
-					source={require("../../assets/icon.png")}
-				/>
+				<View style={{ width: "100%", alignItems: "center" }}>
+					<Image
+						style={styles.logo}
+						source={require("../../assets/icon.png")}
+					/>
+				</View>
 				<View style={{ width: "100%", alignItems: "center" }}>
 					<TextInput
 						style={styles.input}

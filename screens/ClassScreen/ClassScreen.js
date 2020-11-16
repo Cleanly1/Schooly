@@ -238,6 +238,7 @@ export default function ClassScreen({ navigation, route }) {
 			title: data.title,
 			user: user,
 			classid: ID,
+			members: memberList,
 		});
 	};
 
@@ -258,7 +259,7 @@ export default function ClassScreen({ navigation, route }) {
 					onPress={() => navigation.goBack()}
 				></Button>
 				<Text style={styles.headerText}>{classData.title}</Text>
-				{user.type == "Teacher" ? (
+				{user.type === "Teacher" ? (
 					<Button
 						style={{ width: "33%", alignSelf: "flex-end" }}
 						text="Options"
@@ -311,13 +312,12 @@ export default function ClassScreen({ navigation, route }) {
 			)}
 
 			<View style={styles.contentContainer}>
-				<View style={{ width: "45%", marginRight: 5 }}>
-					<View>
+				<View style={{ width: "45%", height: "50%", marginRight: 5 }}>
+					<View style={{ height: "100%" }}>
 						<Text style={styles.titleText}>Members in class:</Text>
 						<ScrollView style={styles.list}>
 							{memberList && memberList.length != 0
 								? memberList.map((memberUser, i) => {
-										console.log(memberUser);
 										return (
 											<View
 												key={i}
@@ -342,65 +342,68 @@ export default function ClassScreen({ navigation, route }) {
 								: null}
 						</ScrollView>
 					</View>
-					{users && users.length > 0 && user.id == classData.owner ? (
-						<View>
-							<Text>Requesting to join the Class:</Text>
-							{users.map((user, i) => {
-								return (
-									<View key={i}>
-										<Text>{user.fullName}</Text>
-										<Text>{user.id}</Text>
-										<TouchableOpacity
-											style={{
-												width: 30,
-												padding: 20,
-												borderRadius: "50%",
-												borderWidth: 5,
-												borderColor: "green",
-												backgroundColor: "darkgreen",
-											}}
-											onPress={() => {
-												acceptUser(user);
-											}}
-										></TouchableOpacity>
-									</View>
-								);
-							})}
-						</View>
-					) : null}
 				</View>
-				<View style={{ width: "45%", marginLeft: 5 }}>
-					<Text style={styles.titleText}>Lessons:</Text>
-					<ScrollView style={styles.list}>
-						{lessonList && lessonList.length > 0
-							? lessonList.map((lessonData, i) => {
-									return (
-										<TouchableOpacity
-											key={i}
-											style={{
-												width: "100%",
-												borderBottomColor: "grey",
-												borderBottomWidth: 2,
-											}}
-											onPress={() =>
-												goToLesson(lessonData)
-											}
-										>
-											<Text
+				<View style={{ width: "45%", height: "50%", marginLeft: 5 }}>
+					<View style={{ height: "100%" }}>
+						<Text style={styles.titleText}>Lessons:</Text>
+						<ScrollView style={styles.list}>
+							{lessonList && lessonList.length > 0
+								? lessonList.map((lessonData, i) => {
+										return (
+											<TouchableOpacity
+												key={i}
 												style={{
 													width: "100%",
-													fontSize: 16,
-													padding: 5,
+													borderBottomColor: "grey",
+													borderBottomWidth: 2,
 												}}
+												onPress={() =>
+													goToLesson(lessonData)
+												}
 											>
-												{`${lessonData.title}`}
-											</Text>
-										</TouchableOpacity>
-									);
-							  })
-							: null}
-					</ScrollView>
+												<Text
+													style={{
+														width: "100%",
+														fontSize: 16,
+														padding: 5,
+													}}
+												>
+													{`${lessonData.title}`}
+												</Text>
+											</TouchableOpacity>
+										);
+								  })
+								: null}
+						</ScrollView>
+					</View>
 				</View>
+			</View>
+			<View style={styles.contentContainer}>
+				{users && users.length > 0 && user.id == classData.owner ? (
+					<ScrollView style={styles.list}>
+						<Text>Requesting to join the Class:</Text>
+						{users.map((user, i) => {
+							return (
+								<View key={i}>
+									<Text>{user.fullName}</Text>
+									<TouchableOpacity
+										style={{
+											width: 30,
+											padding: 20,
+											borderRadius: 100,
+											borderWidth: 5,
+											borderColor: "green",
+											backgroundColor: "darkgreen",
+										}}
+										onPress={() => {
+											acceptUser(user);
+										}}
+									></TouchableOpacity>
+								</View>
+							);
+						})}
+					</ScrollView>
+				) : null}
 			</View>
 		</View>
 	);

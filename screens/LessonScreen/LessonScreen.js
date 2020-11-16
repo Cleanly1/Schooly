@@ -16,11 +16,13 @@ export default function LessonScreen({ navigation, route }) {
 	const [loading, setLoading] = useState(true);
 	const [docs, setDocs] = useState([]);
 	const [updatedText, setUpdatedText] = useState();
-	const [reload, setReload] = useState(true);
+	const [worklist, setWorklist] = useState([]);
+	const [students, setStudent] = useState();
 
 	useEffect(() => {
 		const params = route.params;
 		setUser(params.user);
+		setStudent(params.members);
 
 		if (loading) {
 			firebase
@@ -88,10 +90,32 @@ export default function LessonScreen({ navigation, route }) {
 				.doc(params.classid)
 				.collection("lessons")
 				.doc(params.data.id)
+				.collection("work")
+				.get()
+				.then((querySnapshot) => {
+					let array = [];
+					querySnapshot.forEach((doc) => {
+						console.log(doc.data());
+						// doc.data() is never undefined for query doc snapshots
+						array.push(doc.data());
+					});
+					setWorklist(array);
+				});
+
+			var unsubscribe = firebase
+				.firestore()
+				.collection("classes")
+				.doc(params.classid)
+				.collection("lessons")
+				.doc(params.data.id)
 				.onSnapshot((snapshot) => {
 					setLessonData(snapshot.data());
 					setUpdatedText(snapshot.data().desc);
 				});
+
+			return () => {
+				unsubscribe();
+			};
 		}
 	}, []);
 
@@ -148,7 +172,6 @@ export default function LessonScreen({ navigation, route }) {
 			.child(`images/${lessonData.id}/${imageName}`)
 			.getDownloadURL()
 			.then((url) => {
-				console.log(url);
 				setImages([...images, url]);
 			})
 			.catch((error) => {
@@ -170,7 +193,10 @@ export default function LessonScreen({ navigation, route }) {
 
 		const uri = pickerResult.uri;
 
-		const docName = uri.substring(uri.lastIndexOf("/") + 1, uri.length + 1);
+		let docName =
+			pickerResult.name != undefined
+				? pickerResult.name
+				: uri.substring(uri.lastIndexOf("/") + 1, uri.length + 1);
 
 		const response = await fetch(uri);
 
@@ -191,7 +217,6 @@ export default function LessonScreen({ navigation, route }) {
 			.child(`files/${lessonData.id}/${docName}`)
 			.getDownloadURL()
 			.then((url) => {
-				console.log(url);
 				setDocs([...docs, url]);
 			})
 			.catch((error) => {
@@ -221,7 +246,25 @@ export default function LessonScreen({ navigation, route }) {
 		}
 	};
 
-	const turnInWork = async () => {};
+	const turnInWork = async () => {
+		navigation.navigate("Work", {
+			user: user,
+			lessonData: lessonData,
+			classid: route.params.classid,
+			members: route.params.members,
+			student: user,
+		});
+	};
+
+	const goToWork = (student) => {
+		navigation.navigate("Work", {
+			user: user,
+			lessonData: lessonData,
+			classid: route.params.classid,
+			members: route.params.members,
+			student: student,
+		});
+	};
 
 	const updateText = async () => {
 		let update = lessonData;
@@ -240,7 +283,6 @@ export default function LessonScreen({ navigation, route }) {
 		// setLessonData(update);
 		// setUpdatedText(update.desc);
 
-		console.log(lessonData);
 		alert("Description updated");
 	};
 
@@ -301,7 +343,7 @@ export default function LessonScreen({ navigation, route }) {
 							backgroundColor: "white",
 						}}
 					>
-						{lessonData.desc}
+						{updatedText != undefined ? updatedText : null}
 					</Text>
 				)}
 			</View>
@@ -388,6 +430,37 @@ export default function LessonScreen({ navigation, route }) {
 					/>
 				</View>
 			)}
+			{user.type === "Teacher" ? (
+				<View style={{ flex: 1, width: "100%", alignItems: "center" }}>
+					<Text style={styles.titleText}>Students work:</Text>
+					{worklist &&
+						worklist.map((work, i) => {
+							const student = students.filter((student) => {
+								return student.id == work.id;
+							})[0];
+							//console.log(student.fullName);
+							return (
+								<TouchableOpacity
+									key={i}
+									style={{
+										flex: 1,
+										alignItems: "center",
+										padding: 5,
+										borderWidth: 1,
+										width: 100,
+										maxHeight: 35,
+										margin: 5,
+									}}
+									onPress={() => {
+										goToWork(student);
+									}}
+								>
+									<Text>{student.fullName}</Text>
+								</TouchableOpacity>
+							);
+						})}
+				</View>
+			) : null}
 		</View>
 	);
 }

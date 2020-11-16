@@ -7,3 +7,5 @@ export { default as RegistrationScreen } from "./RegistrationScreen/Registration
 export { default as ClassScreen } from "./ClassScreen/ClassScreen";
 
 export { default as LessonScreen } from "./LessonScreen/LessonScreen";
+
+export { default as WorkScreen } from "./WorkScreen/WorkScreen";

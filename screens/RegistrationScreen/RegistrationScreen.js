@@ -43,7 +43,7 @@ export default function RegistrationScreen({ navigation }) {
 					.doc(uid)
 					.set(data)
 					.then(() => {
-						navigation.navigate("Home", data);
+						// navigation.navigate("Home", data);
 					})
 					.catch((error) => {
 						alert(error);
@@ -57,14 +57,16 @@ export default function RegistrationScreen({ navigation }) {
 	return (
 		<View style={styles.container}>
 			<View style={styles.container}>
-				<Image
-					style={styles.logo}
-					source={require("../../assets/icon.png")}
-				/>
+				<View style={{ width: "100%", alignItems: "center" }}>
+					<Image
+						style={styles.logo}
+						source={require("../../assets/icon.png")}
+					/>
+				</View>
 				<View
 					style={{
 						alignItems: "center",
-						height: 60,
+						height: 100,
 						marginBottom: 10,
 					}}
 				>
@@ -72,7 +74,7 @@ export default function RegistrationScreen({ navigation }) {
 					<Picker
 						selectedValue={type}
 						style={{
-							height: 50,
+							height: 100,
 							width: 150,
 							overflow: "hidden",
 							justifyContent: "center",
@@ -114,7 +116,7 @@ export default function RegistrationScreen({ navigation }) {
 					<TextInput
 						style={styles.input}
 						placeholderTextColor="#aaaaaa"
-						secureTextEntry
+						//secureTextEntry
 						placeholder="Password"
 						onChangeText={(text) => setPassword(text)}
 						value={password}
@@ -124,7 +126,7 @@ export default function RegistrationScreen({ navigation }) {
 					<TextInput
 						style={styles.input}
 						placeholderTextColor="#aaaaaa"
-						secureTextEntry
+						//secureTextEntry
 						placeholder="Confirm Password"
 						onChangeText={(text) => setConfirmPassword(text)}
 						value={confirmPassword}

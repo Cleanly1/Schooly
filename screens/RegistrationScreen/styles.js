@@ -11,9 +11,8 @@ export default StyleSheet.create({
 	},
 	title: {},
 	logo: {
-		flex: 1,
-		height: 120,
-		width: 90,
+		height: 200,
+		width: 200,
 		alignSelf: "center",
 		margin: 30,
 	},
