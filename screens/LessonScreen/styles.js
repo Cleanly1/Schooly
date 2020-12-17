@@ -13,7 +13,7 @@ export default StyleSheet.create({
 	},
 
 	list: {
-		width: "50%",
+		width: "80%",
 		maxHeight: "50%",
 		borderColor: "black",
 		borderWidth: 1,

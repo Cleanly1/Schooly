@@ -55,7 +55,6 @@ export default function HomeScreen({ navigation, extraData }, props) {
 	}, []);
 
 	const signOut = () => {
-		//setUser("");
 		firebase
 			.auth()
 			.signOut()

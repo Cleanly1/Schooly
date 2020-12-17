@@ -38,12 +38,11 @@ export default function ClassScreen({ navigation, route }) {
 		// 	});
 
 		if (!haveLoaded) {
-			firebase
+			var unsub = firebase
 				.firestore()
 				.collection("classes")
 				.doc(classID)
-				.get()
-				.then((firestoreDocument) => {
+				.onSnapshot((firestoreDocument) => {
 					if (!firestoreDocument.exists) {
 						alert("User does not exist anymore.");
 						return;
@@ -76,6 +75,10 @@ export default function ClassScreen({ navigation, route }) {
 					let array = [];
 					querySnapshot.forEach((snapshot) => {
 						array.push(snapshot.data());
+						var source = snapshot.metadata.fromCache
+							? "local cache"
+							: "server";
+						console.log("Data came from " + source);
 					});
 
 					setMemberList(array);
@@ -100,6 +103,10 @@ export default function ClassScreen({ navigation, route }) {
 				.catch((error) => {
 					console.log(error);
 				});
+
+			return () => {
+				unsub();
+			};
 		}
 	}, []);
 

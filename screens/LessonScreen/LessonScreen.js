@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, Image, Platform } from "react-native";
 import styles from "./styles";
 import Button from "../../components/Button/Button";
@@ -78,27 +78,25 @@ export default function LessonScreen({ navigation, route }) {
 					// Uh-oh, an error occurred!
 				});
 
-			firebase
+			var lesson = firebase
 				.firestore()
 				.collection("classes")
 				.doc(params.classid)
 				.collection("lessons")
 				.doc(params.data.id)
-				.get()
-				.then((snapshot) => {
+				.onSnapshot((snapshot) => {
 					setLessonData(snapshot.data());
 					setUpdatedText(snapshot.data().desc);
 				});
 
-			firebase
+			var work = firebase
 				.firestore()
 				.collection("classes")
 				.doc(params.classid)
 				.collection("lessons")
 				.doc(params.data.id)
 				.collection("work")
-				.get()
-				.then((querySnapshot) => {
+				.onSnapshot((querySnapshot) => {
 					let array = [];
 					querySnapshot.forEach((doc) => {
 						// doc.data() is never undefined for query doc snapshots
@@ -120,6 +118,8 @@ export default function LessonScreen({ navigation, route }) {
 
 			return () => {
 				unsubscribe();
+				work();
+				lesson();
 			};
 		}
 	}, []);
@@ -177,7 +177,7 @@ export default function LessonScreen({ navigation, route }) {
 			.child(`images/${lessonData.id}/${imageName}`)
 			.getDownloadURL()
 			.then((url) => {
-				setImages([...images, { name: itemRef.name, url: url }]);
+				setImages([...images, { name: imageName, url: url }]);
 			})
 			.catch((error) => {
 				console.log(error);
@@ -222,7 +222,7 @@ export default function LessonScreen({ navigation, route }) {
 			.child(`files/${lessonData.id}/${docName}`)
 			.getDownloadURL()
 			.then((url) => {
-				setDocs([...docs, { name: itemRef.name, url: url }]);
+				setDocs([...docs, { name: docName, url: url }]);
 			})
 			.catch((error) => {
 				console.log(error);
@@ -441,9 +441,10 @@ export default function LessonScreen({ navigation, route }) {
 				<View
 					style={{
 						flex: 1,
-						width: "80%",
+						width: "100%",
 						alignItems: "flex-start",
 						margin: 10,
+						paddingHorizontal: "22%",
 					}}
 				>
 					<Text style={styles.titleText}>Students work:</Text>
