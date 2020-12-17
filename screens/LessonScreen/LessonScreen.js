@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Component } from "react";
 import { View, Text, TouchableOpacity, Image, Platform } from "react-native";
 import styles from "./styles";
 import Button from "../../components/Button/Button";
@@ -9,25 +9,30 @@ import * as WebBrowser from "expo-web-browser";
 import { firebase } from "../../src/firebase/config";
 import { ScrollView, TextInput } from "react-native-gesture-handler";
 
-export default function LessonScreen({ navigation, route }) {
-	const [lessonData, setLessonData] = useState();
-	const [user, setUser] = useState();
-	const [images, setImages] = useState([]);
-	const [loading, setLoading] = useState(true);
-	const [docs, setDocs] = useState([]);
-	const [updatedText, setUpdatedText] = useState();
-	const [worklist, setWorklist] = useState([]);
-	const [students, setStudent] = useState();
+export default class LessonScreen extends Component {
+	constructor(props) {
+		super(props);
 
-	useEffect(() => {
-		const params = route.params;
-		setUser(params.user);
-		setStudent(params.members);
+		this.state = {
+			lessonData: "",
+			user: "",
+			loading: true,
+			images: [],
+			docs: [],
+			updatedText: "",
+			worklist: [],
+			students: null,
+		};
+	}
 
-		if (loading) {
+	componentDidMount() {
+		const params = this.props.route.params;
+		this.setState({ user: params.user, students: params.members });
+
+		if (this.state.loading) {
 			firebase
 				.storage()
-				.ref("images/" + route.params.data.id)
+				.ref("images/" + this.props.route.params.data.id)
 				.listAll()
 				.then((res) => {
 					res.prefixes.forEach((folderRef) => {
@@ -38,10 +43,12 @@ export default function LessonScreen({ navigation, route }) {
 					res.items.forEach(async (itemRef) => {
 						// All the items under listRef.
 						itemRef.getDownloadURL().then((url) => {
-							setImages([
-								...images,
-								{ name: itemRef.name, url: url },
-							]);
+							this.setState({
+								images: [
+									...this.state.images,
+									{ name: itemRef.name, url: url },
+								],
+							});
 						});
 						//setImages([...images, url]);
 					});
@@ -52,7 +59,7 @@ export default function LessonScreen({ navigation, route }) {
 				});
 			firebase
 				.storage()
-				.ref("files/" + route.params.data.id)
+				.ref("files/" + this.props.route.params.data.id)
 				.listAll()
 				.then((res) => {
 					res.prefixes.forEach((folderRef) => {
@@ -63,33 +70,39 @@ export default function LessonScreen({ navigation, route }) {
 					res.items.forEach(async (itemRef) => {
 						// All the items under listRef.
 						itemRef.getDownloadURL().then((url) => {
-							setDocs([
-								...docs,
-								{ name: itemRef.name, url: url },
-							]);
+							this.setState({
+								docs: [
+									...this.state.docs,
+									{ name: itemRef.name, url: url },
+								],
+							});
 						});
 						//setImages([...images, url]);
 					});
 
-					setLoading(false);
+					this.setState({
+						loading: false,
+					});
 				})
 				.catch((error) => {
 					console.log(error);
 					// Uh-oh, an error occurred!
 				});
 
-			var lesson = firebase
+			this.lesson = firebase
 				.firestore()
 				.collection("classes")
 				.doc(params.classid)
 				.collection("lessons")
 				.doc(params.data.id)
 				.onSnapshot((snapshot) => {
-					setLessonData(snapshot.data());
-					setUpdatedText(snapshot.data().desc);
+					this.setState({
+						lessonData: snapshot.data(),
+						updatedText: snapshot.data().desc,
+					});
 				});
 
-			var work = firebase
+			this.work = firebase
 				.firestore()
 				.collection("classes")
 				.doc(params.classid)
@@ -102,37 +115,33 @@ export default function LessonScreen({ navigation, route }) {
 						// doc.data() is never undefined for query doc snapshots
 						array.push(doc.data());
 					});
-					setWorklist(array);
+					this.setState({
+						worklist: array,
+					});
 				});
 
-			var unsubscribe = firebase
+			this.unsubscribe = firebase
 				.firestore()
 				.collection("classes")
 				.doc(params.classid)
 				.collection("lessons")
 				.doc(params.data.id)
 				.onSnapshot((snapshot) => {
-					setLessonData(snapshot.data());
-					setUpdatedText(snapshot.data().desc);
+					this.setState({
+						lessonData: snapshot.data(),
+						updatedText: snapshot.data().desc,
+					});
 				});
-
-			return () => {
-				unsubscribe();
-				work();
-				lesson();
-			};
 		}
-	}, []);
-
-	if (loading) {
-		return (
-			<View>
-				<Text>Loading...</Text>
-			</View>
-		);
 	}
 
-	const addImage = async () => {
+	componentWillUnmount() {
+		this.unsubscribe();
+		this.work();
+		this.lesson();
+	}
+
+	addImage = async () => {
 		let permissionResult = await ImagePicker.requestCameraRollPermissionsAsync();
 
 		if (permissionResult.granted === false) {
@@ -165,7 +174,7 @@ export default function LessonScreen({ navigation, route }) {
 		await firebase
 			.storage()
 			.ref()
-			.child(`images/${lessonData.id}/${imageName}`)
+			.child(`images/${this.state.lessonData.id}/${imageName}`)
 			.put(blob)
 			.catch((error) => {
 				alert(error);
@@ -174,10 +183,15 @@ export default function LessonScreen({ navigation, route }) {
 		firebase
 			.storage()
 			.ref()
-			.child(`images/${lessonData.id}/${imageName}`)
+			.child(`images/${this.state.lessonData.id}/${imageName}`)
 			.getDownloadURL()
 			.then((url) => {
-				setImages([...images, { name: imageName, url: url }]);
+				this.setState({
+					images: [
+						...this.state.images,
+						{ name: imageName, url: url },
+					],
+				});
 			})
 			.catch((error) => {
 				console.log(error);
@@ -188,7 +202,7 @@ export default function LessonScreen({ navigation, route }) {
 		alert("Image uploaded successfully");
 	};
 
-	const addFile = async () => {
+	addFile = async () => {
 		let pickerResult = await DocumentPicker.getDocumentAsync();
 
 		if (pickerResult.type != "success") {
@@ -210,7 +224,7 @@ export default function LessonScreen({ navigation, route }) {
 		await firebase
 			.storage()
 			.ref()
-			.child(`files/${lessonData.id}/${docName}`)
+			.child(`files/${this.state.lessonData.id}/${docName}`)
 			.put(blob)
 			.catch((error) => {
 				alert(error);
@@ -219,10 +233,12 @@ export default function LessonScreen({ navigation, route }) {
 		firebase
 			.storage()
 			.ref()
-			.child(`files/${lessonData.id}/${docName}`)
+			.child(`files/${this.state.lessonData.id}/${docName}`)
 			.getDownloadURL()
 			.then((url) => {
-				setDocs([...docs, { name: docName, url: url }]);
+				this.setState({
+					docs: [...this.state.docs, { name: docName, url: url }],
+				});
 			})
 			.catch((error) => {
 				console.log(error);
@@ -232,7 +248,7 @@ export default function LessonScreen({ navigation, route }) {
 		alert("Document uploaded successfully");
 	};
 
-	const openFile = async (uri) => {
+	openFile = async (uri) => {
 		if (Platform.OS === "ios") {
 			WebBrowser.dismissBrowser();
 		}
@@ -251,37 +267,37 @@ export default function LessonScreen({ navigation, route }) {
 		}
 	};
 
-	const turnInWork = async () => {
-		navigation.navigate("Work", {
-			user: user,
-			lessonData: lessonData,
-			classid: route.params.classid,
-			members: route.params.members,
-			student: user,
+	turnInWork = async () => {
+		this.props.navigation.navigate("Work", {
+			user: this.state.user,
+			lessonData: this.state.lessonData,
+			classid: this.props.route.params.classid,
+			members: this.props.route.params.members,
+			student: this.state.user,
 		});
 	};
 
-	const goToWork = (student) => {
-		navigation.navigate("Work", {
-			user: user,
-			lessonData: lessonData,
-			classid: route.params.classid,
-			members: route.params.members,
+	goToWork = (student) => {
+		this.props.navigation.navigate("Work", {
+			user: this.state.user,
+			lessonData: this.state.lessonData,
+			classid: this.props.route.params.classid,
+			members: this.props.route.params.members,
 			student: student,
 		});
 	};
 
-	const updateText = async () => {
-		let update = lessonData;
+	updateText = async () => {
+		let update = this.state.lessonData;
 
-		update.desc = updatedText;
+		update.desc = this.state.updatedText;
 
 		const lessonRef = firebase
 			.firestore()
 			.collection("classes")
-			.doc(route.params.classid)
+			.doc(this.props.route.params.classid)
 			.collection("lessons")
-			.doc(lessonData.id);
+			.doc(this.state.lessonData.id);
 
 		await lessonRef.update(update);
 
@@ -291,29 +307,70 @@ export default function LessonScreen({ navigation, route }) {
 		alert("Description updated");
 	};
 
-	return (
-		<View style={styles.container}>
-			<View
-				style={{
-					width: "80%",
-					borderRadius: 3,
-					padding: 5,
-					margin: 10,
-				}}
-			>
-				<Text
+	render() {
+		if (this.state.loading) {
+			return (
+				<View>
+					<Text>Loading...</Text>
+				</View>
+			);
+		}
+		return (
+			<View style={styles.container}>
+				<View
 					style={{
-						fontSize: 18,
-						fontWeight: "bold",
-						marginBottom: 5,
+						width: "80%",
+						borderRadius: 3,
+						padding: 5,
+						margin: 10,
 					}}
 				>
-					Description:{" "}
-				</Text>
+					<Text
+						style={{
+							fontSize: 18,
+							fontWeight: "bold",
+							marginBottom: 5,
+						}}
+					>
+						Description:{" "}
+					</Text>
 
-				{user.type === "Teacher" ? (
-					<View>
-						<TextInput
+					{this.state.user.type === "Teacher" ? (
+						<View>
+							<TextInput
+								style={{
+									width: "100%",
+									minHeight: 50,
+									borderWidth: 2,
+									padding: 5,
+									backgroundColor: "white",
+								}}
+								placeholderTextColor="#aaaaaa"
+								onChangeText={(text) =>
+									this.setState({ updatedText: text })
+								}
+								value={this.state.updatedText}
+								underlineColorAndroid="transparent"
+								multiline={true}
+								autoCapitalize="none"
+							/>
+							<Button
+								style={{
+									borderWidth: 1,
+									margin: 5,
+									width: "50%",
+								}}
+								textStyle={{
+									textShadowColor: "black",
+								}}
+								text="Update Text"
+								onPress={() => {
+									this.updateText();
+								}}
+							/>
+						</View>
+					) : (
+						<Text
 							style={{
 								width: "100%",
 								minHeight: 50,
@@ -321,163 +378,139 @@ export default function LessonScreen({ navigation, route }) {
 								padding: 5,
 								backgroundColor: "white",
 							}}
-							placeholderTextColor="#aaaaaa"
-							onChangeText={(text) => setUpdatedText(text)}
-							value={updatedText}
-							underlineColorAndroid="transparent"
-							multiline={true}
-							autoCapitalize="none"
-						/>
-						<Button
-							style={{
-								borderWidth: 1,
-								margin: 5,
-
-								width: "50%",
-							}}
-							textStyle={{
-								textShadowColor: "black",
-							}}
-							text="Update Text"
-							onPress={() => {
-								updateText();
-							}}
-						/>
-					</View>
-				) : (
-					<Text
-						style={{
-							width: "100%",
-							minHeight: 50,
-							borderWidth: 2,
-							padding: 5,
-							backgroundColor: "white",
-						}}
-					>
-						{updatedText != undefined ? updatedText : null}
-					</Text>
-				)}
-			</View>
-			<View>
-				<Text style={styles.titleText}>Images: </Text>
-				{images && images.length != 0 ? (
-					<View style={{ margin: 10, flexDirection: "row" }}>
-						{images.map((imgData, i) => {
-							return (
-								<TouchableOpacity
-									key={i}
-									style={{ margin: 5 }}
-									onPress={() => {
-										openFile(imgData.url);
-									}}
-								>
-									<Image
-										style={{ height: 200, width: 150 }}
-										source={{ uri: imgData.url }}
-									/>
-								</TouchableOpacity>
-							);
-						})}
-					</View>
-				) : (
-					<Text>No images have been added to this lesson</Text>
-				)}
-			</View>
-			<View style={{ margin: 10 }}>
-				<Text style={styles.titleText}>
-					Documents: {docs.length != 0 ? "(Press to view)" : null}
-				</Text>
-				{docs && docs.length != 0 ? (
-					docs.map((doc, i) => {
-						return (
-							<TouchableOpacity
-								key={i}
-								style={{
-									margin: 5,
-									borderWidth: 1,
-									padding: 5,
-									width: "30%",
-								}}
-								onPress={() => {
-									openFile(doc.url, doc.name);
-								}}
-							>
-								<Text>{doc.name} </Text>
-							</TouchableOpacity>
-						);
-					})
-				) : (
-					<Text>No documents have been added to this lesson</Text>
-				)}
-			</View>
-			{user.type === "Teacher" ? (
-				<View style={{ flexDirection: "row" }}>
-					<Button
-						style={{ marginRight: 5 }}
-						text="Add one image to this lesson"
-						onPress={() => {
-							addImage();
-						}}
-					></Button>
-					<Button
-						style={{ marginLeft: 5 }}
-						text="Add a file to this lesson"
-						onPress={() => {
-							addFile();
-						}}
-					></Button>
+						>
+							{this.state.updatedText != undefined
+								? this.state.updatedText
+								: null}
+						</Text>
+					)}
 				</View>
-			) : (
-				<View style={{ width: "80%" }}>
-					<Button
-						text="Turn in your work"
-						onPress={() => {
-							turnInWork();
-						}}
-					/>
-				</View>
-			)}
-			{user.type === "Teacher" ? (
-				<View
-					style={{
-						flex: 1,
-						width: "100%",
-						alignItems: "flex-start",
-						margin: 10,
-						paddingHorizontal: "22%",
-					}}
-				>
-					<Text style={styles.titleText}>Students work:</Text>
-					<ScrollView style={[styles.list, { paddingBottom: 20 }]}>
-						{worklist &&
-							worklist.map((work, i) => {
-								const student = students.filter((student) => {
-									return student.id == work.id;
-								})[0];
-
+				<View>
+					<Text style={styles.titleText}>Images: </Text>
+					{this.state.images && this.state.images.length != 0 ? (
+						<View style={{ margin: 10, flexDirection: "row" }}>
+							{this.state.images.map((imgData, i) => {
 								return (
 									<TouchableOpacity
 										key={i}
-										style={{
-											flex: 1,
-											alignItems: "flex-start",
-											padding: 5,
-											borderBottomWidth: 1,
-											borderColor: "grey",
-											maxHeight: 35,
-											margin: 5,
-										}}
+										style={{ margin: 5 }}
 										onPress={() => {
-											goToWork(student);
+											this.openFile(imgData.url);
 										}}
 									>
-										<Text>{student.fullName}</Text>
+										<Image
+											style={{ height: 200, width: 150 }}
+											source={{ uri: imgData.url }}
+										/>
 									</TouchableOpacity>
 								);
 							})}
-					</ScrollView>
+						</View>
+					) : (
+						<Text>No images have been added to this lesson</Text>
+					)}
 				</View>
-			) : null}
-		</View>
-	);
+				<View style={{ margin: 10 }}>
+					<Text style={styles.titleText}>
+						Documents:{" "}
+						{this.state.docs.length != 0 ? "(Press to view)" : null}
+					</Text>
+					{this.state.docs && this.state.docs.length != 0 ? (
+						this.state.docs.map((doc, i) => {
+							return (
+								<TouchableOpacity
+									key={i}
+									style={{
+										margin: 5,
+										borderWidth: 1,
+										padding: 5,
+										width: "30%",
+									}}
+									onPress={() => {
+										this.openFile(doc.url, doc.name);
+									}}
+								>
+									<Text>{doc.name} </Text>
+								</TouchableOpacity>
+							);
+						})
+					) : (
+						<Text>No documents have been added to this lesson</Text>
+					)}
+				</View>
+				{this.state.user.type === "Teacher" ? (
+					<View style={{ flexDirection: "row" }}>
+						<Button
+							style={{ marginRight: 5 }}
+							text="Add one image to this lesson"
+							onPress={() => {
+								this.addImage();
+							}}
+						></Button>
+						<Button
+							style={{ marginLeft: 5 }}
+							text="Add a file to this lesson"
+							onPress={() => {
+								this.addFile();
+							}}
+						></Button>
+					</View>
+				) : (
+					<View style={{ width: "80%" }}>
+						<Button
+							text="Turn in your work"
+							onPress={() => {
+								this.turnInWork();
+							}}
+						/>
+					</View>
+				)}
+				{this.state.user.type === "Teacher" ? (
+					<View
+						style={{
+							flex: 1,
+							width: "100%",
+							alignItems: "flex-start",
+							margin: 10,
+							paddingHorizontal: "22%",
+						}}
+					>
+						<Text style={styles.titleText}>Students work:</Text>
+						<ScrollView
+							style={[styles.list, { paddingBottom: 20 }]}
+						>
+							{this.state.worklist &&
+								this.state.worklist.map((work, i) => {
+									const student = this.state.students.filter(
+										(student) => {
+											return student.id == work.id;
+										}
+									)[0];
+
+									return (
+										<TouchableOpacity
+											key={i}
+											style={{
+												flex: 1,
+												alignItems: "flex-start",
+												padding: 5,
+												borderBottomWidth: 1,
+												borderColor: "grey",
+												maxHeight: 35,
+												margin: 5,
+											}}
+											onPress={() => {
+												this.goToWork(student);
+											}}
+										>
+											<Text>{student.fullName}</Text>
+										</TouchableOpacity>
+									);
+								})}
+						</ScrollView>
+					</View>
+				) : null}
+			</View>
+		);
+	}
 }
