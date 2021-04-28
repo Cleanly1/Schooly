@@ -1,6 +1,6 @@
 
 # Schooly
-My vision for this app is that it will help teachers in school to easier work digitally.
+My vision for this app is that it will help teachers work from home easier.
 
 
 ## How to use it now
